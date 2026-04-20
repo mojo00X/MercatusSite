@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getProduct } from "../api/products";
+import { getProduct } from "../api";
 import { useCart } from "../context/CartContext";
 import SizeSelector from "../components/product/SizeSelector";
 import ColorSelector from "../components/product/ColorSelector";

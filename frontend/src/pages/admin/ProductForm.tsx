@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getProduct, getCategories, createProduct, updateProduct } from "../../api/products";
+import { getProduct, getCategories, createProduct, updateProduct } from "../../api";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import Spinner from "../../components/ui/Spinner";

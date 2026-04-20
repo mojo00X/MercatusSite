@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getAdminStats } from "../../api/orders";
+import { getAdminStats } from "../../api";
 import {
   AreaChart,
   Area,

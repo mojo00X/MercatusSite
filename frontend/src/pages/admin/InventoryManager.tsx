@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAdminVariants, updateVariantStock } from "../../api/orders";
+import { getAdminVariants, updateVariantStock } from "../../api";
 import Badge from "../../components/ui/Badge";
 import Spinner from "../../components/ui/Spinner";
 import toast from "react-hot-toast";

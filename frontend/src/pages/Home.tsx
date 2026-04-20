@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getProducts, getCategories } from "../api/products";
+import { getProducts, getCategories } from "../api";
 import ProductGrid from "../components/product/ProductGrid";
 import Spinner from "../components/ui/Spinner";
 import Button from "../components/ui/Button";

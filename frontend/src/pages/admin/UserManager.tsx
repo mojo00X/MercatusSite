@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAdminUsers, toggleAdmin } from "../../api/orders";
+import { getAdminUsers, toggleAdmin } from "../../api";
 import Badge from "../../components/ui/Badge";
 import Spinner from "../../components/ui/Spinner";
 import toast from "react-hot-toast";

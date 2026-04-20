@@ -9,9 +9,10 @@ from app.routers import admin, auth, cart, checkout, orders, products
 app = FastAPI(title="Mercatus API", version="1.0.0")
 
 # CORS
+allowed_origins = [o.strip() for o in settings.FRONTEND_URL.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

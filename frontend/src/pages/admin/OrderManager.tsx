@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAllOrders, updateOrderStatus } from "../../api/orders";
+import { getAllOrders, updateOrderStatus } from "../../api";
 import Badge from "../../components/ui/Badge";
 import Spinner from "../../components/ui/Spinner";
 import Modal from "../../components/ui/Modal";

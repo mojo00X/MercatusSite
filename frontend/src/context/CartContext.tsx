@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Cart, CartItem } from "../types";
-import * as cartApi from "../api/cart";
+import * as cartApi from "../api";
 import { useAuth } from "./AuthContext";
 import toast from "react-hot-toast";
 

@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { User } from "../types";
-import * as authApi from "../api/auth";
+import * as authApi from "../api";
 
 interface AuthContextType {
   user: User | null;

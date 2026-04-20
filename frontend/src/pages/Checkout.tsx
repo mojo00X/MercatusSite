@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCart } from "../context/CartContext";
-import { createCheckoutSession } from "../api/orders";
+import { createCheckoutSession } from "../api";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import toast from "react-hot-toast";

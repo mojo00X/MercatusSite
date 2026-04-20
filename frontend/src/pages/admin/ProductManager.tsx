@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { getProducts, deleteProduct } from "../../api/products";
+import { getProducts, deleteProduct } from "../../api";
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 import Spinner from "../../components/ui/Spinner";

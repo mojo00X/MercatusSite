@@ -1,6 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getProducts, getCategories } from "../api/products";
+import { getProducts, getCategories } from "../api";
 import ProductGrid from "../components/product/ProductGrid";
 import FilterPanel from "../components/product/FilterPanel";
 import Spinner from "../components/ui/Spinner";

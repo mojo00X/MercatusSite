@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { getOrders } from "../api/orders";
+import { getOrders } from "../api";
 import Badge from "../components/ui/Badge";
 import Spinner from "../components/ui/Spinner";
 
