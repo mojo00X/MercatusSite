@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getProduct, getCategories, createProduct, updateProduct } from "../../api";
+import { uploadImage } from "../../lib/cloudinary";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import Spinner from "../../components/ui/Spinner";
@@ -50,7 +51,8 @@ export default function ProductForm() {
   const [gender, setGender] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [isActive, setIsActive] = useState(true);
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [variants, setVariants] = useState<VariantRow[]>([{ ...emptyVariant }]);
   const [saving, setSaving] = useState(false);
 
@@ -63,7 +65,12 @@ export default function ProductForm() {
       setGender(product.gender || "");
       setCategoryId(String(product.category_id || ""));
       setIsActive(product.is_active);
-      setImageUrl(product.images?.[0]?.url || "");
+      setImageUrls(
+        (product.images || [])
+          .slice()
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((img) => img.url)
+      );
       if (product.variants?.length) {
         setVariants(
           product.variants.map((v: ProductVariant) => ({
@@ -79,6 +86,26 @@ export default function ProductForm() {
       }
     }
   }, [product]);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      const urls = await Promise.all(files.map(uploadImage));
+      setImageUrls((prev) => [...prev, ...urls]);
+      toast.success(`${urls.length} image(s) uploaded`);
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImageUrls(imageUrls.filter((_, i) => i !== index));
+  };
 
   const addVariant = () => setVariants([...variants, { ...emptyVariant }]);
 
@@ -104,7 +131,11 @@ export default function ProductForm() {
         gender,
         category_id: categoryId ? parseInt(categoryId) : null,
         is_active: isActive,
-        images: imageUrl ? [{ url: imageUrl, is_primary: true, sort_order: 0 }] : [],
+        images: imageUrls.map((url, i) => ({
+          url,
+          is_primary: i === 0,
+          sort_order: i,
+        })),
         variants: variants.map((v) => ({
           ...v,
           stock_quantity: Number(v.stock),
@@ -222,21 +253,51 @@ export default function ProductForm() {
           </label>
         </div>
 
-        {/* Image */}
+        {/* Images */}
         <div className="bg-white border rounded-lg p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Image</h2>
-          <Input
-            label="Image URL"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://example.com/image.jpg"
-          />
-          {imageUrl && (
-            <img
-              src={imageUrl}
-              alt="Preview"
-              className="w-32 h-40 object-cover rounded-md border"
-            />
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Images</h2>
+            <label className="cursor-pointer">
+              <span className="inline-flex items-center px-4 py-2 text-sm font-medium border border-gray-300 rounded-md bg-white hover:bg-gray-50">
+                {uploading ? "Uploading..." : "Upload Images"}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleFileSelect}
+                disabled={uploading}
+              />
+            </label>
+          </div>
+          <p className="text-xs text-gray-500">
+            First image is the primary. Upload multiple at once.
+          </p>
+          {imageUrls.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {imageUrls.map((url, i) => (
+                <div key={url} className="relative group">
+                  <img
+                    src={url}
+                    alt={`Product image ${i + 1}`}
+                    className="w-full h-40 object-cover rounded-md border"
+                  />
+                  {i === 0 && (
+                    <span className="absolute top-2 left-2 px-2 py-0.5 text-xs font-medium bg-black text-white rounded">
+                      Primary
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center bg-white border rounded-full text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 

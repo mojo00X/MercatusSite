@@ -126,6 +126,17 @@ def create_product(
         )
         db.add(variant)
 
+    for img in product_data.images:
+        db.add(
+            ProductImage(
+                product_id=product.id,
+                url=img.url,
+                alt_text=img.alt_text,
+                is_primary=img.is_primary,
+                sort_order=img.sort_order,
+            )
+        )
+
     db.commit()
     db.refresh(product)
     return product
@@ -148,11 +159,25 @@ def update_product(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
 
     update_dict = update_data.model_dump(exclude_unset=True)
+    new_images = update_dict.pop("images", None)
     for key, value in update_dict.items():
         setattr(product, key, value)
 
     if "name" in update_dict:
         product.slug = _slugify(update_dict["name"])
+
+    if new_images is not None:
+        db.query(ProductImage).filter(ProductImage.product_id == product.id).delete()
+        for img in new_images:
+            db.add(
+                ProductImage(
+                    product_id=product.id,
+                    url=img["url"],
+                    alt_text=img.get("alt_text"),
+                    is_primary=img.get("is_primary", False),
+                    sort_order=img.get("sort_order", 0),
+                )
+            )
 
     product.updated_at = datetime.utcnow()
     db.commit()

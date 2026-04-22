@@ -18,6 +18,13 @@ class VariantUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
+class ImageInput(BaseModel):
+    url: str
+    alt_text: Optional[str] = None
+    is_primary: bool = False
+    sort_order: int = 0
+
+
 class ProductCreate(BaseModel):
     name: str
     description: Optional[str] = None
@@ -26,6 +33,7 @@ class ProductCreate(BaseModel):
     gender: str = "unisex"
     material: Optional[str] = None
     variants: List[VariantCreate] = []
+    images: List[ImageInput] = []
 
 
 class ProductUpdate(BaseModel):
@@ -36,6 +44,7 @@ class ProductUpdate(BaseModel):
     gender: Optional[str] = None
     material: Optional[str] = None
     is_active: Optional[bool] = None
+    images: Optional[List[ImageInput]] = None
 
 
 class DashboardStats(BaseModel):
