@@ -37,6 +37,19 @@ def on_startup():
 
     Base.metadata.create_all(bind=engine)
 
+    # Auto-seed if the database is empty
+    from app.database import SessionLocal
+    from app.models.user import User
+
+    db = SessionLocal()
+    try:
+        if not db.query(User).first():
+            db.close()
+            from seed import seed
+            seed()
+    finally:
+        db.close()
+
 
 @app.get("/api/health")
 def health_check():
