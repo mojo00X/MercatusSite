@@ -109,7 +109,7 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 export async function createProduct(product: Partial<Product>): Promise<Product> {
-  const { data } = await client.post("/products", product);
+  const { data } = await client.post("/admin/products", product);
   return data;
 }
 
@@ -117,12 +117,12 @@ export async function updateProduct(
   id: number,
   product: Partial<Product>
 ): Promise<Product> {
-  const { data } = await client.put(`/products/${id}`, product);
+  const { data } = await client.put(`/admin/products/${id}`, product);
   return data;
 }
 
 export async function deleteProduct(id: number): Promise<void> {
-  await client.delete(`/products/${id}`);
+  await client.delete(`/admin/products/${id}`);
 }
 
 export async function getCart(): Promise<Cart> {
@@ -187,7 +187,7 @@ export async function updateOrderStatus(
 }
 
 export async function getAdminStats(): Promise<AdminStats> {
-  const { data } = await client.get("/admin/stats");
+  const { data } = await client.get("/admin/dashboard");
   return data;
 }
 
