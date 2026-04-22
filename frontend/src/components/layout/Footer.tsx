@@ -8,7 +8,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <span className="text-2xl font-bold text-white tracking-tight">
-              MERC<span className="text-gray-500">ATUS</span>
+              MIRE<span className="text-gray-500">VI</span>
             </span>
             <p className="mt-3 text-sm leading-relaxed max-w-md">
               Curated fashion for the modern individual. Quality materials, timeless
@@ -65,7 +65,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-gray-800 text-center text-sm">
-          &copy; {new Date().getFullYear()} Mercatus. All rights reserved.
+          &copy; {new Date().getFullYear()} Mirevi. All rights reserved.
         </div>
       </div>
     </footer>

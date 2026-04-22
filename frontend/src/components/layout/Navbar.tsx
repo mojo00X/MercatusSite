@@ -24,7 +24,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex-shrink-0">
             <span className="text-2xl font-bold tracking-tight text-black">
-              MERC<span className="text-gray-400">ATUS</span>
+              MIRE<span className="text-gray-400">VI</span>
             </span>
           </Link>
 

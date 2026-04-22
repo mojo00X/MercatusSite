@@ -6,7 +6,7 @@ from app.config import settings
 from app.database import Base, engine
 from app.routers import admin, auth, cart, checkout, orders, products
 
-app = FastAPI(title="Mercatus API", version="1.0.0")
+app = FastAPI(title="Mirevi API", version="1.0.0")
 
 # CORS
 allowed_origins = [o.strip() for o in settings.FRONTEND_URL.split(",") if o.strip()]
