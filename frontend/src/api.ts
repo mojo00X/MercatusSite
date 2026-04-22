@@ -158,7 +158,7 @@ export async function mergeCart(): Promise<Cart> {
 
 export async function getOrders(): Promise<Order[]> {
   const { data } = await client.get("/orders");
-  return data;
+  return data.items ?? data;
 }
 
 export async function getOrder(id: number): Promise<Order> {

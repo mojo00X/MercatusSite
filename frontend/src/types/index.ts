@@ -86,7 +86,7 @@ export interface Order {
   id: number;
   user_id: number;
   status: string;
-  total: number;
+  total_amount: number;
   shipping_address?: string;
   shipping_city?: string;
   shipping_state?: string;

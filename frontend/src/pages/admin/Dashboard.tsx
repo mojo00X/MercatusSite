@@ -159,7 +159,7 @@ export default function Dashboard() {
                     </Badge>
                   </td>
                   <td className="px-6 py-4 text-right font-medium">
-                    ${order.total.toFixed(2)}
+                    ${(order.total_amount ?? 0).toFixed(2)}
                   </td>
                 </tr>
               ))}

@@ -67,7 +67,7 @@ export default function OrderHistory() {
                     {order.status}
                   </Badge>
                   <p className="mt-1 text-sm font-semibold">
-                    ${order.total.toFixed(2)}
+                    ${(order.total_amount ?? 0).toFixed(2)}
                   </p>
                 </div>
               </div>

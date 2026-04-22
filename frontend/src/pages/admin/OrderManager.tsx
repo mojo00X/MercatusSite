@@ -115,7 +115,7 @@ export default function OrderManager() {
                     {order.items?.length || 0}
                   </td>
                   <td className="px-6 py-4 font-medium">
-                    ${order.total.toFixed(2)}
+                    ${(order.total_amount ?? 0).toFixed(2)}
                   </td>
                   <td className="px-6 py-4">
                     <Badge color={statusColors[order.status] || "gray"}>

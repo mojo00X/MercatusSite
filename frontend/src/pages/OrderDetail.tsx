@@ -110,7 +110,7 @@ export default function OrderDetail() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Total</span>
-                <span className="font-semibold">${order.total.toFixed(2)}</span>
+                <span className="font-semibold">${(order.total_amount ?? 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Date</span>
