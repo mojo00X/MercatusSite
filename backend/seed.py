@@ -22,19 +22,20 @@ def seed():
     db = SessionLocal()
 
     try:
-        # Check if already seeded
-        if db.query(User).filter(User.email == "admin@store.com").first():
-            print("Database already seeded. Skipping.")
+        # Check if already seeded (has products)
+        if db.query(Product).first():
+            print("Products already seeded. Skipping.")
             return
 
-        # ── Admin User ───────────────────────────────────────────────────
-        admin = User(
-            email="admin@store.com",
-            hashed_password=hash_password("admin123"),
-            full_name="Store Admin",
-            is_admin=True,
-        )
-        db.add(admin)
+        # ── Admin User (create only if missing) ─────────────────────────
+        if not db.query(User).filter(User.email == "admin@store.com").first():
+            admin = User(
+                email="admin@store.com",
+                hashed_password=hash_password("admin123"),
+                full_name="Store Admin",
+                is_admin=True,
+            )
+            db.add(admin)
 
         # ── Categories ───────────────────────────────────────────────────
         categories_data = [

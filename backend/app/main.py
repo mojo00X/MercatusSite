@@ -32,21 +32,31 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
 def on_startup():
+    import logging
+    logger = logging.getLogger("uvicorn.error")
+
     # Import all models so they are registered with Base
     import app.models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+    logger.info("Database tables ensured.")
 
-    # Auto-seed if the database is empty
     from app.database import SessionLocal
-    from app.models.user import User
+    from app.models.product import Product
 
     db = SessionLocal()
     try:
-        if not db.query(User).first():
-            db.close()
-            from seed import seed
-            seed()
+        product_count = db.query(Product).count()
+        logger.info(f"Startup: found {product_count} products in database.")
+        db.close()
+        if product_count == 0:
+            logger.info("Database empty — running seed...")
+            try:
+                from seed import seed
+                seed()
+                logger.info("Seed complete.")
+            except Exception as e:
+                logger.error(f"Seed failed: {e}", exc_info=True)
     finally:
         db.close()
 
