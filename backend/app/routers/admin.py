@@ -10,6 +10,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.dependencies import get_db, require_admin
+from app.models.collection import Collection
 from app.models.order import Order, OrderItem
 from app.models.product import Category, Product, ProductImage, ProductVariant
 from app.models.user import User
@@ -20,8 +21,14 @@ from app.schemas.admin import (
     RestockRequest,
     VariantUpdate,
 )
+from app.schemas.collection import (
+    CategoryImageUpdate,
+    CollectionCreate,
+    CollectionResponse,
+    CollectionUpdate,
+)
 from app.schemas.order import OrderListResponse, OrderResponse
-from app.schemas.product import ProductResponse
+from app.schemas.product import CategoryResponse, ProductResponse
 from app.schemas.user import UserResponse
 
 router = APIRouter()
@@ -368,3 +375,88 @@ def restock(
         "variant_id": variant.id,
         "new_stock_quantity": variant.stock_quantity,
     }
+
+
+# ── Categories ───────────────────────────────────────────────────────────────
+
+
+@router.get("/categories", response_model=List[CategoryResponse])
+def admin_list_categories(
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return db.query(Category).order_by(Category.name.asc()).all()
+
+
+@router.put("/categories/{category_id}/image", response_model=CategoryResponse)
+def admin_update_category_image(
+    category_id: int,
+    payload: CategoryImageUpdate,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    category.image_url = payload.image_url
+    db.commit()
+    db.refresh(category)
+    return category
+
+
+# ── Collections ──────────────────────────────────────────────────────────────
+
+
+@router.get("/collections", response_model=List[CollectionResponse])
+def admin_list_collections(
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return (
+        db.query(Collection)
+        .order_by(Collection.sort_order.asc(), Collection.id.asc())
+        .all()
+    )
+
+
+@router.post("/collections", response_model=CollectionResponse, status_code=201)
+def admin_create_collection(
+    payload: CollectionCreate,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    collection = Collection(**payload.model_dump())
+    db.add(collection)
+    db.commit()
+    db.refresh(collection)
+    return collection
+
+
+@router.put("/collections/{collection_id}", response_model=CollectionResponse)
+def admin_update_collection(
+    collection_id: int,
+    payload: CollectionUpdate,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    collection = db.query(Collection).filter(Collection.id == collection_id).first()
+    if not collection:
+        raise HTTPException(status_code=404, detail="Collection not found")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(collection, key, value)
+    db.commit()
+    db.refresh(collection)
+    return collection
+
+
+@router.delete("/collections/{collection_id}", status_code=204)
+def admin_delete_collection(
+    collection_id: int,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    collection = db.query(Collection).filter(Collection.id == collection_id).first()
+    if not collection:
+        raise HTTPException(status_code=404, detail="Collection not found")
+    db.delete(collection)
+    db.commit()

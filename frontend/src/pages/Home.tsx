@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getProducts, getCategories } from "../api";
+import { getProducts, getCategories, getCollections } from "../api";
 import ProductGrid from "../components/product/ProductGrid";
 import Spinner from "../components/ui/Spinner";
 import Button from "../components/ui/Button";
+import Slideshow from "../components/home/Slideshow";
 
 export default function Home() {
   const { data: productsData, isLoading: loadingProducts } = useQuery({
@@ -16,36 +17,15 @@ export default function Home() {
     queryFn: getCategories,
   });
 
+  const { data: collections = [] } = useQuery({
+    queryKey: ["collections"],
+    queryFn: getCollections,
+  });
+
   return (
     <div>
-      {/* Hero */}
-      <section className="relative bg-gray-950 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-800" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-36">
-          <div className="max-w-2xl">
-            <p className="text-sm font-medium tracking-widest uppercase text-gray-400 mb-4">
-              New Season Arrivals
-            </p>
-            <h1 className="text-4xl md:text-6xl font-bold leading-tight tracking-tight">
-              Shop the Latest Collection
-            </h1>
-            <p className="mt-6 text-lg text-gray-300 leading-relaxed">
-              Discover curated fashion pieces designed for the modern wardrobe.
-              Premium materials, timeless style.
-            </p>
-            <div className="mt-8 flex gap-4">
-              <Link to="/products">
-                <Button size="lg">Shop Now</Button>
-              </Link>
-              <Link to="/products?sort=newest">
-                <Button variant="secondary" size="lg" className="!bg-transparent !text-white !border-white hover:!bg-white hover:!text-black">
-                  Newest Arrivals
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Slideshow */}
+      <Slideshow slides={collections} />
 
       {/* Categories */}
       {categories && categories.length > 0 && (

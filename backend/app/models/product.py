@@ -15,6 +15,7 @@ class Category(Base):
     name = Column(String, nullable=False)
     slug = Column(String, unique=True, nullable=False, index=True)
     parent_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
+    image_url = Column(String, nullable=True)
 
     parent = relationship("Category", remote_side="Category.id", backref="children")
     products = relationship("Product", back_populates="category")

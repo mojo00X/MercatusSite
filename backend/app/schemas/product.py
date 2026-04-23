@@ -32,6 +32,7 @@ class CategoryResponse(BaseModel):
     name: str
     slug: str
     parent_id: Optional[int] = None
+    image_url: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

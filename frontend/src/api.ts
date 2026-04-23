@@ -4,6 +4,7 @@ import type {
   Product,
   Category,
   Cart,
+  Collection,
   Order,
   PaginatedResponse,
   ProductFilters,
@@ -213,5 +214,49 @@ export async function updateVariantStock(
 
 export async function getAdminVariants(): Promise<any[]> {
   const { data } = await client.get("/admin/variants");
+  return data;
+}
+
+export async function getCollections(): Promise<Collection[]> {
+  const { data } = await client.get("/collections");
+  return data;
+}
+
+export async function adminListCollections(): Promise<Collection[]> {
+  const { data } = await client.get("/admin/collections");
+  return data;
+}
+
+export async function adminCreateCollection(
+  payload: Partial<Collection>
+): Promise<Collection> {
+  const { data } = await client.post("/admin/collections", payload);
+  return data;
+}
+
+export async function adminUpdateCollection(
+  id: number,
+  payload: Partial<Collection>
+): Promise<Collection> {
+  const { data } = await client.put(`/admin/collections/${id}`, payload);
+  return data;
+}
+
+export async function adminDeleteCollection(id: number): Promise<void> {
+  await client.delete(`/admin/collections/${id}`);
+}
+
+export async function adminListCategories(): Promise<Category[]> {
+  const { data } = await client.get("/admin/categories");
+  return data;
+}
+
+export async function adminUpdateCategoryImage(
+  id: number,
+  image_url: string | null
+): Promise<Category> {
+  const { data } = await client.put(`/admin/categories/${id}/image`, {
+    image_url,
+  });
   return data;
 }

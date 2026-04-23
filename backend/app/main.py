@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import Base, engine
-from app.routers import admin, auth, cart, checkout, orders, products
+from app.routers import admin, auth, cart, checkout, collections, orders, products
 
 app = FastAPI(title="Mirevi API", version="1.0.0")
 
@@ -24,6 +24,7 @@ app.include_router(products.router, prefix="/api/products", tags=["Products"])
 app.include_router(cart.router, prefix="/api/cart", tags=["Cart"])
 app.include_router(checkout.router, prefix="/api/checkout", tags=["Checkout"])
 app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
+app.include_router(collections.router, prefix="/api/collections", tags=["Collections"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 
 # Static files
@@ -40,6 +41,35 @@ def on_startup():
 
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables ensured.")
+
+    # Add image_url column to categories if missing (pragmatic mini-migration)
+    from sqlalchemy import text
+    with engine.begin() as conn:
+        try:
+            conn.execute(text("ALTER TABLE categories ADD COLUMN image_url VARCHAR"))
+            logger.info("Added image_url column to categories.")
+        except Exception:
+            pass  # column already exists
+
+    # Seed a default collection (matches current hero) if none exist
+    from app.database import SessionLocal as _S
+    from app.models.collection import Collection
+    _db = _S()
+    try:
+        if _db.query(Collection).count() == 0:
+            _db.add(Collection(
+                title="Shop the Latest Collection",
+                subtitle="Discover curated fashion pieces designed for the modern wardrobe. Premium materials, timeless style.",
+                image_url="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&q=80",
+                link_url="/products",
+                button_text="Shop Now",
+                sort_order=0,
+                is_active=True,
+            ))
+            _db.commit()
+            logger.info("Seeded default collection.")
+    finally:
+        _db.close()
 
     from app.database import SessionLocal
     from app.models.product import Product
