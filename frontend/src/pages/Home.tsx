@@ -38,7 +38,7 @@ export default function Home() {
                 <Button size="lg">Shop Now</Button>
               </Link>
               <Link to="/products?sort=newest">
-                <Button variant="secondary" size="lg" className="!text-white !border-white/30 hover:!bg-white/10">
+                <Button variant="secondary" size="lg" className="!bg-transparent !text-white !border-white hover:!bg-white hover:!text-black">
                   Newest Arrivals
                 </Button>
               </Link>
