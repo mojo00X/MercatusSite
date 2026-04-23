@@ -18,10 +18,17 @@ def create_checkout_session(
     success_url: Optional[str] = None,
     cancel_url: Optional[str] = None,
 ) -> stripe.checkout.Session:
+    primary_frontend = settings.FRONTEND_URL.split(",")[0].strip()
+    # Prefer the production domain if listed
+    for origin in settings.FRONTEND_URL.split(","):
+        origin = origin.strip()
+        if origin and not origin.startswith("http://localhost"):
+            primary_frontend = origin
+            break
     if not success_url:
-        success_url = f"{settings.FRONTEND_URL}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}"
+        success_url = f"{primary_frontend}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}"
     if not cancel_url:
-        cancel_url = f"{settings.FRONTEND_URL}/cart"
+        cancel_url = f"{primary_frontend}/cart"
 
     line_items = []
     for item in cart.items:

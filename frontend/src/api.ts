@@ -167,8 +167,8 @@ export async function getOrder(id: number): Promise<Order> {
 }
 
 export async function createCheckoutSession(): Promise<{ url: string }> {
-  const { data } = await client.post("/orders/checkout");
-  return data;
+  const { data } = await client.post("/checkout/create-session");
+  return { url: data.checkout_url };
 }
 
 export async function getAllOrders(
