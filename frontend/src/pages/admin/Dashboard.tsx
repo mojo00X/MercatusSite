@@ -147,7 +147,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {stats?.recent_orders?.map((order) => (
+              {Array.isArray(stats?.recent_orders) && stats?.recent_orders?.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium">#{order.id}</td>
                   <td className="px-6 py-4 text-gray-500">
@@ -163,7 +163,7 @@ export default function Dashboard() {
                   </td>
                 </tr>
               ))}
-              {(!stats?.recent_orders || stats.recent_orders.length === 0) && (
+              {(!Array.isArray(stats?.recent_orders) || stats.recent_orders.length === 0) && (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
                     No recent orders
