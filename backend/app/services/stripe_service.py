@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import List, Optional
 
 import stripe
@@ -9,6 +10,7 @@ from app.models.cart import Cart, CartItem
 from app.models.order import Order, OrderItem
 from app.models.product import ProductVariant
 
+logger = logging.getLogger("uvicorn.error")
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
@@ -18,17 +20,21 @@ def create_checkout_session(
     success_url: Optional[str] = None,
     cancel_url: Optional[str] = None,
 ) -> stripe.checkout.Session:
-    primary_frontend = settings.FRONTEND_URL.split(",")[0].strip()
-    # Prefer the production domain if listed
+    primary_frontend = ""
     for origin in settings.FRONTEND_URL.split(","):
-        origin = origin.strip()
-        if origin and not origin.startswith("http://localhost"):
+        origin = origin.strip().rstrip("/")
+        if origin.startswith("https://") and "localhost" not in origin:
             primary_frontend = origin
             break
+    if not primary_frontend:
+        primary_frontend = "https://www.mirevi.app"
+
     if not success_url:
         success_url = f"{primary_frontend}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}"
     if not cancel_url:
         cancel_url = f"{primary_frontend}/cart"
+
+    logger.info(f"Stripe checkout success_url={success_url} cancel_url={cancel_url}")
 
     line_items = []
     for item in cart.items:
