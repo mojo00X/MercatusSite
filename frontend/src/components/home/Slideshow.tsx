@@ -6,19 +6,33 @@ interface Props {
   slides: Collection[];
 }
 
+const FALLBACK: Collection[] = [
+  {
+    id: 0,
+    title: "Shop the Latest Collection",
+    subtitle:
+      "Discover curated fashion pieces designed for the modern wardrobe. Premium materials, timeless style.",
+    image_url:
+      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&q=80",
+    link_url: "/products",
+    button_text: "Shop Now",
+    sort_order: 0,
+    is_active: true,
+  },
+];
+
 export default function Slideshow({ slides }: Props) {
+  const effectiveSlides = slides.length ? slides : FALLBACK;
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    if (paused || slides.length <= 1) return;
+    if (paused || effectiveSlides.length <= 1) return;
     const id = setInterval(() => {
-      setIndex((i) => (i + 1) % slides.length);
+      setIndex((i) => (i + 1) % effectiveSlides.length);
     }, 7000);
     return () => clearInterval(id);
-  }, [paused, slides.length]);
-
-  if (!slides.length) return null;
+  }, [paused, effectiveSlides.length]);
 
   return (
     <section
@@ -26,7 +40,7 @@ export default function Slideshow({ slides }: Props) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {slides.map((slide, i) => (
+      {effectiveSlides.map((slide, i) => (
         <div
           key={slide.id}
           className={`absolute inset-0 transition-opacity duration-1000 ${
@@ -64,11 +78,11 @@ export default function Slideshow({ slides }: Props) {
         </div>
       ))}
 
-      {slides.length > 1 && (
+      {effectiveSlides.length > 1 && (
         <>
           <button
             onClick={() =>
-              setIndex((i) => (i - 1 + slides.length) % slides.length)
+              setIndex((i) => (i - 1 + effectiveSlides.length) % effectiveSlides.length)
             }
             className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center backdrop-blur-sm transition"
             aria-label="Previous slide"
@@ -76,14 +90,14 @@ export default function Slideshow({ slides }: Props) {
             ‹
           </button>
           <button
-            onClick={() => setIndex((i) => (i + 1) % slides.length)}
+            onClick={() => setIndex((i) => (i + 1) % effectiveSlides.length)}
             className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center backdrop-blur-sm transition"
             aria-label="Next slide"
           >
             ›
           </button>
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-            {slides.map((_, i) => (
+            {effectiveSlides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setIndex(i)}
