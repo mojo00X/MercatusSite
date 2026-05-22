@@ -4,10 +4,11 @@ from pydantic import BaseModel
 
 
 class VariantCreate(BaseModel):
+    id: Optional[int] = None
     size: str
     color: str
     color_hex: Optional[str] = None
-    sku: str
+    sku: Optional[str] = None
     price_override: Optional[float] = None
     stock_quantity: int = 0
 
@@ -45,6 +46,7 @@ class ProductUpdate(BaseModel):
     material: Optional[str] = None
     is_active: Optional[bool] = None
     images: Optional[List[ImageInput]] = None
+    variants: Optional[List[VariantCreate]] = None
 
 
 class DashboardStats(BaseModel):

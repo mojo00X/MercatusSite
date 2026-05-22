@@ -41,6 +41,22 @@ def _slugify(text: str) -> str:
     return text
 
 
+def _generate_sku(db: Session, slug: str, size: str, color: str) -> str:
+    """Build a unique SKU from product/variant attributes.
+
+    The admin form has no SKU input, so variants arrive with an empty SKU.
+    ``ProductVariant.sku`` is UNIQUE/NOT NULL, so blank SKUs collide as soon
+    as more than one exists. Generate a deterministic-but-unique value here.
+    """
+    base = "-".join(
+        p for p in (_slugify(slug), _slugify(size or ""), _slugify(color or "")) if p
+    ) or "sku"
+    sku = base
+    while db.query(ProductVariant.id).filter(ProductVariant.sku == sku).first():
+        sku = f"{base}-{uuid.uuid4().hex[:6]}"
+    return sku
+
+
 # ── Dashboard ────────────────────────────────────────────────────────────────
 
 
@@ -127,7 +143,7 @@ def create_product(
             size=v.size,
             color=v.color,
             color_hex=v.color_hex,
-            sku=v.sku,
+            sku=(v.sku or "").strip() or _generate_sku(db, slug, v.size, v.color),
             price_override=v.price_override,
             stock_quantity=v.stock_quantity,
         )
@@ -167,6 +183,7 @@ def update_product(
 
     update_dict = update_data.model_dump(exclude_unset=True)
     new_images = update_dict.pop("images", None)
+    new_variants = update_dict.pop("variants", None)
     for key, value in update_dict.items():
         setattr(product, key, value)
 
@@ -185,6 +202,38 @@ def update_product(
                     sort_order=img.get("sort_order", 0),
                 )
             )
+
+    if new_variants is not None:
+        existing = {v.id: v for v in product.variants}
+        kept_ids = set()
+        for v in new_variants:
+            vid = v.get("id")
+            if vid and vid in existing:
+                variant = existing[vid]
+                variant.size = v["size"]
+                variant.color = v["color"]
+                variant.color_hex = v.get("color_hex")
+                variant.price_override = v.get("price_override")
+                variant.stock_quantity = v.get("stock_quantity", 0)
+                if (v.get("sku") or "").strip():
+                    variant.sku = v["sku"].strip()
+                kept_ids.add(vid)
+            else:
+                db.add(
+                    ProductVariant(
+                        product_id=product.id,
+                        size=v["size"],
+                        color=v["color"],
+                        color_hex=v.get("color_hex"),
+                        sku=(v.get("sku") or "").strip()
+                        or _generate_sku(db, product.slug, v["size"], v["color"]),
+                        price_override=v.get("price_override"),
+                        stock_quantity=v.get("stock_quantity", 0),
+                    )
+                )
+        for vid, variant in existing.items():
+            if vid not in kept_ids:
+                db.delete(variant)
 
     product.updated_at = datetime.utcnow()
     db.commit()

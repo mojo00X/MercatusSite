@@ -151,8 +151,12 @@ export default function ProductForm() {
         toast.success("Product created");
       }
       navigate("/admin/products");
-    } catch {
-      toast.error("Failed to save product");
+    } catch (err: any) {
+      const detail =
+        err?.response?.data?.detail || err?.message || "Failed to save product";
+      toast.error(
+        typeof detail === "string" ? detail : "Failed to save product"
+      );
     } finally {
       setSaving(false);
     }
@@ -313,7 +317,7 @@ export default function ProductForm() {
             {variants.map((v, i) => (
               <div
                 key={i}
-                className="grid grid-cols-2 md:grid-cols-6 gap-3 items-end p-4 bg-gray-50 rounded-lg"
+                className="grid grid-cols-2 md:grid-cols-7 gap-3 items-end p-4 bg-gray-50 rounded-lg"
               >
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">
@@ -360,6 +364,13 @@ export default function ProductForm() {
                   value={v.price_override}
                   onChange={(e) => updateVariant(i, "price_override", e.target.value)}
                   placeholder="Optional"
+                  className="!py-1.5"
+                />
+                <Input
+                  label="SKU"
+                  value={v.sku}
+                  onChange={(e) => updateVariant(i, "sku", e.target.value)}
+                  placeholder="Auto"
                   className="!py-1.5"
                 />
                 <div className="flex items-end">

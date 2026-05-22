@@ -44,7 +44,8 @@ export default function CollectionManager() {
       toast.success("Collection saved");
       setEditing(null);
     },
-    onError: () => toast.error("Save failed"),
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.detail || err?.message || "Save failed"),
   });
 
   const deleteMutation = useMutation({
