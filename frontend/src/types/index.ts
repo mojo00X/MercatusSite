@@ -87,15 +87,35 @@ export interface Order {
   user_id: number;
   status: string;
   total_amount: number;
-  shipping_address?: string;
-  shipping_city?: string;
-  shipping_state?: string;
-  shipping_zip?: string;
-  shipping_country?: string;
+  /** JSON string: { name?, street, city, state, zip, country }. Parse with parseShippingAddress(). */
+  shipping_address?: string | null;
   stripe_session_id?: string;
   items: OrderItem[];
   created_at: string;
   updated_at: string;
+}
+
+export interface ParsedShippingAddress {
+  name?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+}
+
+export function parseShippingAddress(
+  raw: string | null | undefined
+): ParsedShippingAddress | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") return parsed as ParsedShippingAddress;
+  } catch {
+    // Legacy rows may have been saved as a plain string.
+    return { street: raw };
+  }
+  return null;
 }
 
 export interface PaginatedResponse<T> {

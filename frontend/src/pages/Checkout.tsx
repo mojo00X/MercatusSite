@@ -20,9 +20,13 @@ export default function Checkout() {
   const total = cartTotal + shipping;
 
   const handleCheckout = async () => {
+    if (!address.street || !address.city || !address.state || !address.zip) {
+      toast.error("Please fill in your shipping address");
+      return;
+    }
     try {
       setLoading(true);
-      const { url } = await createCheckoutSession();
+      const { url } = await createCheckoutSession(address);
       window.location.href = url;
     } catch {
       toast.error("Failed to create checkout session");

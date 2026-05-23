@@ -167,8 +167,21 @@ export async function getOrder(id: number): Promise<Order> {
   return data;
 }
 
-export async function createCheckoutSession(): Promise<{ url: string }> {
-  const { data } = await client.post("/checkout/create-session");
+export interface CheckoutShippingAddress {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+}
+
+export async function createCheckoutSession(
+  shipping_address?: CheckoutShippingAddress
+): Promise<{ url: string }> {
+  const { data } = await client.post(
+    "/checkout/create-session",
+    shipping_address ? { shipping_address } : {}
+  );
   return { url: data.checkout_url };
 }
 

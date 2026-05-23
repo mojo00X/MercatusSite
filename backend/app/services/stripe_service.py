@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import stripe
 from sqlalchemy.orm import Session
@@ -19,6 +19,7 @@ def create_checkout_session(
     db: Session,
     success_url: Optional[str] = None,
     cancel_url: Optional[str] = None,
+    shipping_address: Optional[Dict[str, Any]] = None,
 ) -> stripe.checkout.Session:
     primary_frontend = ""
     for origin in settings.FRONTEND_URL.split(","):
@@ -56,19 +57,31 @@ def create_checkout_session(
             }
         )
 
-    checkout_session = stripe.checkout.Session.create(
+    metadata: Dict[str, str] = {
+        "cart_id": str(cart.id),
+        "user_id": str(cart.user_id) if cart.user_id else "",
+    }
+
+    session_kwargs: Dict[str, Any] = dict(
         payment_method_types=["card"],
         line_items=line_items,
         mode="payment",
         success_url=success_url,
         cancel_url=cancel_url,
-        metadata={
-            "cart_id": str(cart.id),
-            "user_id": str(cart.user_id) if cart.user_id else "",
-        },
     )
 
-    return checkout_session
+    # Persist the shipping address the user typed on our checkout page through
+    # to the Order via webhook. Stripe metadata values are capped at 500 chars,
+    # which is plenty for a serialized address.
+    if shipping_address:
+        metadata["shipping_address"] = json.dumps(shipping_address)[:500]
+        country = (shipping_address.get("country") or "US").upper()
+        session_kwargs["shipping_address_collection"] = {
+            "allowed_countries": [country],
+        }
+
+    session_kwargs["metadata"] = metadata
+    return stripe.checkout.Session.create(**session_kwargs)
 
 
 def handle_webhook(payload: bytes, sig_header: str, db: Session) -> dict:
@@ -122,12 +135,37 @@ def _process_completed_checkout(session: dict, db: Session) -> None:
         # Decrement stock
         variant.stock_quantity = max(0, variant.stock_quantity - item.quantity)
 
+    # Prefer Stripe's collected shipping_details (validated on their hosted
+    # page); fall back to what the user typed on our checkout form, which we
+    # round-tripped through session metadata.
+    shipping_json: Optional[str] = None
+    shipping_details = session.get("shipping_details") or session.get("shipping")
+    if shipping_details and shipping_details.get("address"):
+        addr = shipping_details["address"]
+        shipping_json = json.dumps(
+            {
+                "name": shipping_details.get("name"),
+                "street": " ".join(
+                    p for p in (addr.get("line1"), addr.get("line2")) if p
+                ).strip(),
+                "city": addr.get("city"),
+                "state": addr.get("state"),
+                "zip": addr.get("postal_code"),
+                "country": addr.get("country"),
+            }
+        )
+    else:
+        meta_shipping = session.get("metadata", {}).get("shipping_address")
+        if meta_shipping:
+            shipping_json = meta_shipping
+
     order = Order(
         user_id=int(user_id),
         status="paid",
         total_amount=total,
         stripe_session_id=session.get("id"),
         stripe_payment_intent=session.get("payment_intent"),
+        shipping_address=shipping_json,
         items=order_items,
     )
     db.add(order)

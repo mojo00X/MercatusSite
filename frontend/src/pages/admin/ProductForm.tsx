@@ -28,6 +28,36 @@ const emptyVariant: VariantRow = {
   sku: "",
 };
 
+// Curated palette so variants can't accidentally save a named color with a
+// stale #000000 hex. Click a swatch to fill both `color` and `color_hex`; the
+// manual fields stay editable for anything outside the preset list.
+const COLOR_PRESETS: { name: string; hex: string }[] = [
+  { name: "Black", hex: "#000000" },
+  { name: "White", hex: "#FFFFFF" },
+  { name: "Ivory", hex: "#FFFFF0" },
+  { name: "Cream", hex: "#FFFDD0" },
+  { name: "Grey", hex: "#808080" },
+  { name: "Charcoal", hex: "#36454F" },
+  { name: "Navy", hex: "#000080" },
+  { name: "Sky Blue", hex: "#87CEEB" },
+  { name: "Royal Blue", hex: "#4169E1" },
+  { name: "Teal", hex: "#008080" },
+  { name: "Sage", hex: "#9CAF88" },
+  { name: "Olive", hex: "#708238" },
+  { name: "Forest", hex: "#228B22" },
+  { name: "Red", hex: "#C8102E" },
+  { name: "Burgundy", hex: "#800020" },
+  { name: "Blush", hex: "#DE5D83" },
+  { name: "Pink", hex: "#FFC0CB" },
+  { name: "Mustard", hex: "#FFDB58" },
+  { name: "Camel", hex: "#C19A6B" },
+  { name: "Sand", hex: "#C2B280" },
+  { name: "Khaki", hex: "#C3B091" },
+  { name: "Brown", hex: "#8B4513" },
+  { name: "Light Wash", hex: "#B5C7D3" },
+  { name: "Indigo", hex: "#3F0FB7" },
+];
+
 export default function ProductForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -116,6 +146,12 @@ export default function ProductForm() {
   const updateVariant = (index: number, field: keyof VariantRow, value: string | number) => {
     const updated = [...variants];
     (updated[index] as any)[field] = value;
+    setVariants(updated);
+  };
+
+  const applyPreset = (index: number, preset: { name: string; hex: string }) => {
+    const updated = [...variants];
+    updated[index] = { ...updated[index], color: preset.name, color_hex: preset.hex };
     setVariants(updated);
   };
 
@@ -314,76 +350,108 @@ export default function ProductForm() {
             </Button>
           </div>
           <div className="space-y-4">
-            {variants.map((v, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-2 md:grid-cols-7 gap-3 items-end p-4 bg-gray-50 rounded-lg"
-              >
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Size
-                  </label>
-                  <select
-                    value={v.size}
-                    onChange={(e) => updateVariant(i, "size", e.target.value)}
-                    className="w-full px-2 py-1.5 text-sm border rounded-md"
-                  >
-                    {["XS", "S", "M", "L", "XL", "XXL"].map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
-                  </select>
+            {variants.map((v, i) => {
+              const presetMatch = COLOR_PRESETS.find(
+                (p) => p.hex.toLowerCase() === (v.color_hex || "").toLowerCase()
+              );
+              return (
+                <div
+                  key={i}
+                  className="p-4 bg-gray-50 rounded-lg space-y-3"
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-7 gap-3 items-end">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                        Size
+                      </label>
+                      <select
+                        value={v.size}
+                        onChange={(e) => updateVariant(i, "size", e.target.value)}
+                        className="w-full px-2 py-1.5 text-sm border rounded-md"
+                      >
+                        {["XS", "S", "M", "L", "XL", "XXL"].map((s) => (
+                          <option key={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <Input
+                      label="Color"
+                      value={v.color}
+                      onChange={(e) => updateVariant(i, "color", e.target.value)}
+                      className="!py-1.5"
+                    />
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                        Hex
+                      </label>
+                      <input
+                        type="color"
+                        value={v.color_hex}
+                        onChange={(e) => updateVariant(i, "color_hex", e.target.value)}
+                        className="w-full h-[34px] rounded border cursor-pointer"
+                      />
+                    </div>
+                    <Input
+                      label="Stock"
+                      type="number"
+                      value={String(v.stock)}
+                      onChange={(e) => updateVariant(i, "stock", e.target.value)}
+                      className="!py-1.5"
+                    />
+                    <Input
+                      label="Price Override"
+                      type="number"
+                      step="0.01"
+                      value={v.price_override}
+                      onChange={(e) => updateVariant(i, "price_override", e.target.value)}
+                      placeholder="Optional"
+                      className="!py-1.5"
+                    />
+                    <Input
+                      label="SKU"
+                      value={v.sku}
+                      onChange={(e) => updateVariant(i, "sku", e.target.value)}
+                      placeholder="Auto"
+                      className="!py-1.5"
+                    />
+                    <div className="flex items-end">
+                      <button
+                        type="button"
+                        onClick={() => removeVariant(i)}
+                        className="px-3 py-1.5 text-sm text-red-500 hover:text-red-700 border border-red-200 rounded-md hover:bg-red-50"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                      Preset palette {presetMatch ? `· ${presetMatch.name}` : "· custom"}
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {COLOR_PRESETS.map((p) => {
+                        const isActive =
+                          presetMatch?.hex.toLowerCase() === p.hex.toLowerCase();
+                        return (
+                          <button
+                            key={p.hex}
+                            type="button"
+                            onClick={() => applyPreset(i, p)}
+                            title={`${p.name} (${p.hex})`}
+                            className={`w-6 h-6 rounded-full border transition ${
+                              isActive
+                                ? "ring-2 ring-offset-1 ring-black border-black"
+                                : "border-gray-300 hover:border-gray-500"
+                            }`}
+                            style={{ backgroundColor: p.hex }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-                <Input
-                  label="Color"
-                  value={v.color}
-                  onChange={(e) => updateVariant(i, "color", e.target.value)}
-                  className="!py-1.5"
-                />
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Hex
-                  </label>
-                  <input
-                    type="color"
-                    value={v.color_hex}
-                    onChange={(e) => updateVariant(i, "color_hex", e.target.value)}
-                    className="w-full h-[34px] rounded border cursor-pointer"
-                  />
-                </div>
-                <Input
-                  label="Stock"
-                  type="number"
-                  value={String(v.stock)}
-                  onChange={(e) => updateVariant(i, "stock", e.target.value)}
-                  className="!py-1.5"
-                />
-                <Input
-                  label="Price Override"
-                  type="number"
-                  step="0.01"
-                  value={v.price_override}
-                  onChange={(e) => updateVariant(i, "price_override", e.target.value)}
-                  placeholder="Optional"
-                  className="!py-1.5"
-                />
-                <Input
-                  label="SKU"
-                  value={v.sku}
-                  onChange={(e) => updateVariant(i, "sku", e.target.value)}
-                  placeholder="Auto"
-                  className="!py-1.5"
-                />
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    onClick={() => removeVariant(i)}
-                    className="px-3 py-1.5 text-sm text-red-500 hover:text-red-700 border border-red-200 rounded-md hover:bg-red-50"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getOrder } from "../api";
 import Badge from "../components/ui/Badge";
 import Spinner from "../components/ui/Spinner";
+import { parseShippingAddress } from "../types";
 
 const statusColors: Record<string, "gray" | "green" | "red" | "yellow" | "blue" | "purple"> = {
   pending: "yellow",
@@ -121,19 +122,26 @@ export default function OrderDetail() {
             </div>
           </div>
 
-          {order.shipping_address && (
-            <div className="bg-gray-50 rounded-lg p-5">
-              <h3 className="font-semibold mb-3">Shipping Address</h3>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p>{order.shipping_address}</p>
-                <p>
-                  {order.shipping_city}, {order.shipping_state}{" "}
-                  {order.shipping_zip}
-                </p>
-                <p>{order.shipping_country}</p>
+          {(() => {
+            const ship = parseShippingAddress(order.shipping_address);
+            if (!ship) return null;
+            return (
+              <div className="bg-gray-50 rounded-lg p-5">
+                <h3 className="font-semibold mb-3">Shipping Address</h3>
+                <div className="text-sm text-gray-600 space-y-1">
+                  {ship.name && <p>{ship.name}</p>}
+                  {ship.street && <p>{ship.street}</p>}
+                  {(ship.city || ship.state || ship.zip) && (
+                    <p>
+                      {[ship.city, ship.state].filter(Boolean).join(", ")}
+                      {ship.zip ? ` ${ship.zip}` : ""}
+                    </p>
+                  )}
+                  {ship.country && <p>{ship.country}</p>}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
     </div>
