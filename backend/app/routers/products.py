@@ -6,8 +6,9 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.dependencies import get_db
-from app.models.product import Category, Product, ProductVariant
+from app.models.product import Brand, Category, Product, ProductVariant
 from app.schemas.product import (
+    BrandResponse,
     CategoryResponse,
     ProductListResponse,
     ProductResponse,
@@ -19,6 +20,7 @@ router = APIRouter()
 @router.get("/", response_model=ProductListResponse)
 def list_products(
     category: Optional[str] = None,
+    brand: Optional[str] = None,
     gender: Optional[str] = None,
     size: Optional[str] = None,
     color: Optional[str] = None,
@@ -32,12 +34,19 @@ def list_products(
 ):
     query = (
         db.query(Product)
-        .options(joinedload(Product.variants), joinedload(Product.images), joinedload(Product.category))
+        .options(
+            joinedload(Product.variants),
+            joinedload(Product.images),
+            joinedload(Product.category),
+            joinedload(Product.brand),
+        )
         .filter(Product.is_active == True)
     )
 
     if category:
         query = query.join(Category).filter(Category.slug == category)
+    if brand:
+        query = query.join(Brand).filter(Brand.slug == brand)
     if gender:
         query = query.filter(Product.gender == gender)
     if min_price is not None:
@@ -91,12 +100,36 @@ def list_categories(db: Session = Depends(get_db)):
     return categories
 
 
+@router.get("/brands", response_model=List[BrandResponse])
+def list_brands(
+    category: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """List brands. If `category` is given, only brands that have at least
+    one active product in that category are returned (used to populate the
+    nested filter UI under the selected category)."""
+    query = db.query(Brand)
+    if category:
+        query = (
+            query.join(Product, Product.brand_id == Brand.id)
+            .join(Category, Product.category_id == Category.id)
+            .filter(Category.slug == category, Product.is_active == True)  # noqa: E712
+            .distinct()
+        )
+    return query.order_by(Brand.name.asc()).all()
+
+
 @router.get("/{slug}", response_model=ProductResponse)
 def get_product(slug: str, db: Session = Depends(get_db)):
     product = (
         db.query(Product)
-        .options(joinedload(Product.variants), joinedload(Product.images), joinedload(Product.category))
-        .filter(Product.slug == slug)
+        .options(
+            joinedload(Product.variants),
+            joinedload(Product.images),
+            joinedload(Product.category),
+            joinedload(Product.brand),
+        )
+        .filter(Product.slug == slug, Product.is_active == True)  # noqa: E712
         .first()
     )
     if not product:

@@ -51,6 +51,12 @@ def on_startup():
         except Exception:
             pass  # column already exists
 
+        try:
+            conn.execute(text("ALTER TABLE products ADD COLUMN brand_id INTEGER REFERENCES brands(id)"))
+            logger.info("Added brand_id column to products.")
+        except Exception:
+            pass  # column already exists
+
     # Seed a default collection (matches current hero) if none exist
     from app.database import SessionLocal as _S
     from app.models.collection import Collection

@@ -31,6 +31,7 @@ class ProductCreate(BaseModel):
     description: Optional[str] = None
     base_price: float
     category_id: Optional[int] = None
+    brand_id: Optional[int] = None
     gender: str = "unisex"
     material: Optional[str] = None
     variants: List[VariantCreate] = []
@@ -42,11 +43,22 @@ class ProductUpdate(BaseModel):
     description: Optional[str] = None
     base_price: Optional[float] = None
     category_id: Optional[int] = None
+    brand_id: Optional[int] = None
     gender: Optional[str] = None
     material: Optional[str] = None
     is_active: Optional[bool] = None
     images: Optional[List[ImageInput]] = None
     variants: Optional[List[VariantCreate]] = None
+
+
+class BrandCreate(BaseModel):
+    name: str
+    logo_url: Optional[str] = None
+
+
+class BrandUpdate(BaseModel):
+    name: Optional[str] = None
+    logo_url: Optional[str] = None
 
 
 class DashboardStats(BaseModel):

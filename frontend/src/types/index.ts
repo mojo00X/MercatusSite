@@ -15,6 +15,13 @@ export interface Category {
   image_url?: string;
 }
 
+export interface Brand {
+  id: number;
+  name: string;
+  slug: string;
+  logo_url?: string | null;
+}
+
 export interface ProductImage {
   id: number;
   url: string;
@@ -46,6 +53,8 @@ export interface Product {
   is_active: boolean;
   category_id?: number;
   category?: Category;
+  brand_id?: number | null;
+  brand?: Brand | null;
   images: ProductImage[];
   variants: ProductVariant[];
   created_at: string;
@@ -127,6 +136,7 @@ export interface PaginatedResponse<T> {
 
 export interface ProductFilters {
   category?: string;
+  brand?: string;
   gender?: string;
   size?: string;
   color?: string;

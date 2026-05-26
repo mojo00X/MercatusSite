@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import type { Category } from "../../types";
+import { getBrands } from "../../api";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 const GENDERS = ["men", "women", "unisex"];
@@ -13,10 +15,17 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const selectedCategory = searchParams.get("category") || "";
+  const selectedBrand = searchParams.get("brand") || "";
   const selectedGender = searchParams.get("gender") || "";
   const selectedSize = searchParams.get("size") || "";
   const minPrice = searchParams.get("min_price") || "";
   const maxPrice = searchParams.get("max_price") || "";
+
+  const { data: brands = [] } = useQuery({
+    queryKey: ["brands", selectedCategory],
+    queryFn: () => getBrands(selectedCategory || undefined),
+    enabled: !!selectedCategory,
+  });
 
   const [localMin, setLocalMin] = useState(minPrice);
   const [localMax, setLocalMax] = useState(maxPrice);
@@ -52,7 +61,7 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
   };
 
   const hasFilters =
-    selectedCategory || selectedGender || selectedSize || minPrice || maxPrice;
+    selectedCategory || selectedBrand || selectedGender || selectedSize || minPrice || maxPrice;
 
   return (
     <div className="space-y-6">
@@ -68,28 +77,69 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
         )}
       </div>
 
-      {/* Categories */}
+      {/* Categories (with nested brands when selected) */}
       <div>
         <h3 className="text-sm font-medium text-gray-900 mb-3">Category</h3>
         <div className="space-y-2">
-          {categories.map((cat) => (
-            <label key={cat.id} className="flex items-center cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={selectedCategory === cat.slug}
-                onChange={() =>
-                  updateFilter(
-                    "category",
-                    selectedCategory === cat.slug ? "" : cat.slug
-                  )
-                }
-                className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-              />
-              <span className="ml-2 text-sm text-gray-700 group-hover:text-black">
-                {cat.name}
-              </span>
-            </label>
-          ))}
+          {categories.map((cat) => {
+            const isSelected = selectedCategory === cat.slug;
+            return (
+              <div key={cat.id}>
+                <label className="flex items-center cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => {
+                      // Selecting a different category clears any brand filter
+                      // from the previous category — it wouldn't apply anyway.
+                      const params = new URLSearchParams(searchParams);
+                      if (isSelected) {
+                        params.delete("category");
+                      } else {
+                        params.set("category", cat.slug);
+                      }
+                      params.delete("brand");
+                      params.delete("page");
+                      setSearchParams(params);
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 group-hover:text-black">
+                    {cat.name}
+                  </span>
+                </label>
+
+                {isSelected && brands.length > 0 && (
+                  <div className="mt-2 ml-6 pl-3 border-l border-gray-200 space-y-1.5">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                      Brand
+                    </div>
+                    {brands.map((brand) => (
+                      <label
+                        key={brand.id}
+                        className="flex items-center cursor-pointer group"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedBrand === brand.slug}
+                          onChange={() =>
+                            updateFilter(
+                              "brand",
+                              selectedBrand === brand.slug ? "" : brand.slug
+                            )
+                          }
+                          className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                        />
+                        <span className="ml-2 text-sm text-gray-700 group-hover:text-black">
+                          {brand.name}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

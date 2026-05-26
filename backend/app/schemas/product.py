@@ -37,6 +37,15 @@ class CategoryResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class BrandResponse(BaseModel):
+    id: int
+    name: str
+    slug: str
+    logo_url: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
 class ProductResponse(BaseModel):
     id: int
     name: str
@@ -45,6 +54,8 @@ class ProductResponse(BaseModel):
     base_price: float
     category_id: Optional[int] = None
     category: Optional[CategoryResponse] = None
+    brand_id: Optional[int] = None
+    brand: Optional[BrandResponse] = None
     gender: str
     material: Optional[str] = None
     is_active: bool

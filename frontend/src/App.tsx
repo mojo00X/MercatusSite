@@ -29,6 +29,7 @@ import InventoryManager from "./pages/admin/InventoryManager";
 import OrderManager from "./pages/admin/OrderManager";
 import UserManager from "./pages/admin/UserManager";
 import CategoryManager from "./pages/admin/CategoryManager";
+import BrandManager from "./pages/admin/BrandManager";
 import CollectionManager from "./pages/admin/CollectionManager";
 
 const queryClient = new QueryClient({
@@ -140,6 +141,7 @@ export default function App() {
                 <Route path="/admin/products/new" element={<ProductForm />} />
                 <Route path="/admin/products/:id/edit" element={<ProductForm />} />
                 <Route path="/admin/categories" element={<CategoryManager />} />
+                <Route path="/admin/brands" element={<BrandManager />} />
                 <Route path="/admin/collections" element={<CollectionManager />} />
                 <Route path="/admin/inventory" element={<InventoryManager />} />
                 <Route path="/admin/orders" element={<OrderManager />} />

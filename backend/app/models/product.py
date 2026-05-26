@@ -21,6 +21,18 @@ class Category(Base):
     products = relationship("Product", back_populates="category")
 
 
+class Brand(Base):
+    __tablename__ = "brands"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    slug = Column(String, unique=True, nullable=False, index=True)
+    logo_url = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    products = relationship("Product", back_populates="brand")
+
+
 class Product(Base):
     __tablename__ = "products"
 
@@ -30,6 +42,7 @@ class Product(Base):
     description = Column(Text)
     base_price = Column(Float, nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id"))
+    brand_id = Column(Integer, ForeignKey("brands.id"), nullable=True, index=True)
     gender = Column(String, nullable=False)  # "men", "women", "unisex"
     material = Column(String)
     is_active = Column(Boolean, default=True)
@@ -37,6 +50,7 @@ class Product(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     category = relationship("Category", back_populates="products")
+    brand = relationship("Brand", back_populates="products")
     variants = relationship("ProductVariant", back_populates="product", cascade="all, delete-orphan")
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
 

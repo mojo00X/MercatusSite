@@ -3,6 +3,7 @@ import type {
   User,
   Product,
   Category,
+  Brand,
   Cart,
   Collection,
   Order,
@@ -272,4 +273,34 @@ export async function adminUpdateCategoryImage(
     image_url,
   });
   return data;
+}
+
+export async function getBrands(categorySlug?: string): Promise<Brand[]> {
+  const params = categorySlug ? { category: categorySlug } : undefined;
+  const { data } = await client.get("/products/brands", { params });
+  return data;
+}
+
+export async function adminListBrands(): Promise<Brand[]> {
+  const { data } = await client.get("/admin/brands");
+  return data;
+}
+
+export async function adminCreateBrand(
+  payload: { name: string; logo_url?: string | null }
+): Promise<Brand> {
+  const { data } = await client.post("/admin/brands", payload);
+  return data;
+}
+
+export async function adminUpdateBrand(
+  id: number,
+  payload: { name?: string; logo_url?: string | null }
+): Promise<Brand> {
+  const { data } = await client.put(`/admin/brands/${id}`, payload);
+  return data;
+}
+
+export async function adminDeleteBrand(id: number): Promise<void> {
+  await client.delete(`/admin/brands/${id}`);
 }

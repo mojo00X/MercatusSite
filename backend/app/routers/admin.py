@@ -12,9 +12,11 @@ from sqlalchemy.orm import Session, joinedload
 from app.dependencies import get_db, require_admin
 from app.models.collection import Collection
 from app.models.order import Order, OrderItem
-from app.models.product import Category, Product, ProductImage, ProductVariant
+from app.models.product import Brand, Category, Product, ProductImage, ProductVariant
 from app.models.user import User
 from app.schemas.admin import (
+    BrandCreate,
+    BrandUpdate,
     DashboardStats,
     ProductCreate,
     ProductUpdate,
@@ -28,7 +30,7 @@ from app.schemas.collection import (
     CollectionUpdate,
 )
 from app.schemas.order import OrderListResponse, OrderResponse
-from app.schemas.product import CategoryResponse, ProductResponse
+from app.schemas.product import BrandResponse, CategoryResponse, ProductResponse
 from app.schemas.user import UserResponse
 
 router = APIRouter()
@@ -105,7 +107,9 @@ def admin_list_products(
             joinedload(Product.variants),
             joinedload(Product.images),
             joinedload(Product.category),
+            joinedload(Product.brand),
         )
+        .filter(Product.is_active == True)  # noqa: E712
         .order_by(Product.created_at.desc())
         .offset(offset)
         .limit(per_page)
@@ -131,6 +135,7 @@ def create_product(
         description=product_data.description,
         base_price=product_data.base_price,
         category_id=product_data.category_id,
+        brand_id=product_data.brand_id,
         gender=product_data.gender,
         material=product_data.material,
     )
@@ -174,7 +179,12 @@ def update_product(
 ):
     product = (
         db.query(Product)
-        .options(joinedload(Product.variants), joinedload(Product.images), joinedload(Product.category))
+        .options(
+            joinedload(Product.variants),
+            joinedload(Product.images),
+            joinedload(Product.category),
+            joinedload(Product.brand),
+        )
         .filter(Product.id == product_id)
         .first()
     )
@@ -250,7 +260,11 @@ def delete_product(
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-    db.delete(product)
+    # Soft delete: variants are referenced by past orders, so we deactivate
+    # instead of hard-deleting to preserve order history.
+    product.is_active = False
+    for variant in product.variants:
+        variant.is_active = False
     db.commit()
 
 
@@ -451,6 +465,69 @@ def admin_update_category_image(
     db.commit()
     db.refresh(category)
     return category
+
+
+# ── Brands ───────────────────────────────────────────────────────────────────
+
+
+@router.get("/brands", response_model=List[BrandResponse])
+def admin_list_brands(
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return db.query(Brand).order_by(Brand.name.asc()).all()
+
+
+@router.post("/brands", response_model=BrandResponse, status_code=status.HTTP_201_CREATED)
+def admin_create_brand(
+    payload: BrandCreate,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    slug = _slugify(payload.name)
+    if db.query(Brand).filter(Brand.slug == slug).first():
+        slug = f"{slug}-{uuid.uuid4().hex[:6]}"
+    brand = Brand(name=payload.name, slug=slug, logo_url=payload.logo_url)
+    db.add(brand)
+    db.commit()
+    db.refresh(brand)
+    return brand
+
+
+@router.put("/brands/{brand_id}", response_model=BrandResponse)
+def admin_update_brand(
+    brand_id: int,
+    payload: BrandUpdate,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    brand = db.query(Brand).filter(Brand.id == brand_id).first()
+    if not brand:
+        raise HTTPException(status_code=404, detail="Brand not found")
+    data = payload.model_dump(exclude_unset=True)
+    if "name" in data:
+        brand.name = data["name"]
+        brand.slug = _slugify(data["name"])
+    if "logo_url" in data:
+        brand.logo_url = data["logo_url"]
+    db.commit()
+    db.refresh(brand)
+    return brand
+
+
+@router.delete("/brands/{brand_id}", status_code=status.HTTP_204_NO_CONTENT)
+def admin_delete_brand(
+    brand_id: int,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    brand = db.query(Brand).filter(Brand.id == brand_id).first()
+    if not brand:
+        raise HTTPException(status_code=404, detail="Brand not found")
+    # Unassign brand from any products that reference it, then drop the row.
+    db.query(Product).filter(Product.brand_id == brand_id).update({"brand_id": None})
+    db.delete(brand)
+    db.commit()
 
 
 # ── Collections ──────────────────────────────────────────────────────────────
