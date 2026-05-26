@@ -26,6 +26,11 @@ export default function ProductCard({ product }: ProductCardProps) {
             <Badge color="gray">{product.category.name}</Badge>
           </div>
         )}
+        {product.condition === "preowned" && (
+          <div className="absolute top-3 right-3">
+            <Badge color="green">Pre-Owned</Badge>
+          </div>
+        )}
       </div>
       <div className="mt-3 space-y-1">
         <h3 className="text-sm font-medium text-gray-900 group-hover:text-gray-600 transition-colors truncate">

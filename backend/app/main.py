@@ -64,6 +64,10 @@ def on_startup():
         "ALTER TABLE products ADD COLUMN brand_id INTEGER REFERENCES brands(id)",
         "products.brand_id",
     )
+    _add_column_if_missing(
+        "ALTER TABLE products ADD COLUMN condition VARCHAR NOT NULL DEFAULT 'new'",
+        "products.condition",
+    )
 
     # Seed a default collection (matches current hero) if none exist
     from app.database import SessionLocal as _S

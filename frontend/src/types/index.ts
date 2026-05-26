@@ -50,6 +50,7 @@ export interface Product {
   base_price: number;
   material?: string;
   gender?: string;
+  condition?: "new" | "preowned";
   is_active: boolean;
   category_id?: number;
   category?: Category;
@@ -138,6 +139,7 @@ export interface ProductFilters {
   category?: string;
   brand?: string;
   gender?: string;
+  condition?: "new" | "preowned";
   size?: string;
   color?: string;
   min_price?: number;

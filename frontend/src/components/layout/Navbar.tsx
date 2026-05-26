@@ -48,6 +48,12 @@ export default function Navbar() {
             >
               Women
             </Link>
+            <Link
+              to="/products?condition=preowned"
+              className="text-sm font-medium text-gray-700 hover:text-black transition-colors"
+            >
+              Pre-Owned
+            </Link>
           </div>
 
           {/* Search - desktop */}
@@ -192,6 +198,13 @@ export default function Navbar() {
               className="block py-2 text-sm font-medium text-gray-700 hover:text-black"
             >
               Women
+            </Link>
+            <Link
+              to="/products?condition=preowned"
+              onClick={() => setMobileOpen(false)}
+              className="block py-2 text-sm font-medium text-gray-700 hover:text-black"
+            >
+              Pre-Owned
             </Link>
           </div>
         </div>

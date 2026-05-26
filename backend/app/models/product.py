@@ -44,6 +44,7 @@ class Product(Base):
     category_id = Column(Integer, ForeignKey("categories.id"))
     brand_id = Column(Integer, ForeignKey("brands.id"), nullable=True, index=True)
     gender = Column(String, nullable=False)  # "men", "women", "unisex"
+    condition = Column(String, nullable=False, default="new")  # "new" | "preowned"
     material = Column(String)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)

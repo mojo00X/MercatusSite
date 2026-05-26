@@ -22,6 +22,7 @@ def list_products(
     category: Optional[str] = None,
     brand: Optional[str] = None,
     gender: Optional[str] = None,
+    condition: Optional[str] = None,
     size: Optional[str] = None,
     color: Optional[str] = None,
     min_price: Optional[float] = None,
@@ -49,6 +50,8 @@ def list_products(
         query = query.join(Brand).filter(Brand.slug == brand)
     if gender:
         query = query.filter(Product.gender == gender)
+    if condition:
+        query = query.filter(Product.condition == condition)
     if min_price is not None:
         query = query.filter(Product.base_price >= min_price)
     if max_price is not None:

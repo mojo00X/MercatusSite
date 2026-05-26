@@ -137,6 +137,7 @@ def create_product(
         category_id=product_data.category_id,
         brand_id=product_data.brand_id,
         gender=product_data.gender,
+        condition=product_data.condition,
         material=product_data.material,
     )
     db.add(product)

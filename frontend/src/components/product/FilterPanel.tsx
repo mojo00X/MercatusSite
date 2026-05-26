@@ -17,6 +17,7 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
   const selectedCategory = searchParams.get("category") || "";
   const selectedBrand = searchParams.get("brand") || "";
   const selectedGender = searchParams.get("gender") || "";
+  const selectedCondition = searchParams.get("condition") || "";
   const selectedSize = searchParams.get("size") || "";
   const minPrice = searchParams.get("min_price") || "";
   const maxPrice = searchParams.get("max_price") || "";
@@ -61,7 +62,13 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
   };
 
   const hasFilters =
-    selectedCategory || selectedBrand || selectedGender || selectedSize || minPrice || maxPrice;
+    selectedCategory ||
+    selectedBrand ||
+    selectedGender ||
+    selectedCondition ||
+    selectedSize ||
+    minPrice ||
+    maxPrice;
 
   return (
     <div className="space-y-6">
@@ -160,6 +167,35 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
               />
               <span className="ml-2 text-sm text-gray-700 group-hover:text-black capitalize">
                 {g}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Condition */}
+      <div>
+        <h3 className="text-sm font-medium text-gray-900 mb-3">Condition</h3>
+        <div className="space-y-2">
+          {[
+            { value: "new", label: "New" },
+            { value: "preowned", label: "Pre-Owned" },
+          ].map((c) => (
+            <label key={c.value} className="flex items-center cursor-pointer group">
+              <input
+                type="radio"
+                name="condition"
+                checked={selectedCondition === c.value}
+                onChange={() =>
+                  updateFilter(
+                    "condition",
+                    selectedCondition === c.value ? "" : c.value
+                  )
+                }
+                className="h-4 w-4 border-gray-300 text-black focus:ring-black"
+              />
+              <span className="ml-2 text-sm text-gray-700 group-hover:text-black">
+                {c.label}
               </span>
             </label>
           ))}

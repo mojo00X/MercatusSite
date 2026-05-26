@@ -33,6 +33,7 @@ class ProductCreate(BaseModel):
     category_id: Optional[int] = None
     brand_id: Optional[int] = None
     gender: str = "unisex"
+    condition: str = "new"
     material: Optional[str] = None
     variants: List[VariantCreate] = []
     images: List[ImageInput] = []
@@ -45,6 +46,7 @@ class ProductUpdate(BaseModel):
     category_id: Optional[int] = None
     brand_id: Optional[int] = None
     gender: Optional[str] = None
+    condition: Optional[str] = None
     material: Optional[str] = None
     is_active: Optional[bool] = None
     images: Optional[List[ImageInput]] = None

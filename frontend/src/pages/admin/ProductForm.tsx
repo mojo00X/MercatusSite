@@ -92,6 +92,7 @@ export default function ProductForm() {
   const [gender, setGender] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [brandId, setBrandId] = useState("");
+  const [condition, setCondition] = useState<"new" | "preowned">("new");
   const [isActive, setIsActive] = useState(true);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -107,6 +108,7 @@ export default function ProductForm() {
       setGender(product.gender || "");
       setCategoryId(String(product.category_id || ""));
       setBrandId(product.brand_id ? String(product.brand_id) : "");
+      setCondition(product.condition === "preowned" ? "preowned" : "new");
       setIsActive(product.is_active);
       setImageUrls(
         (product.images || [])
@@ -180,6 +182,7 @@ export default function ProductForm() {
         gender,
         category_id: categoryId ? parseInt(categoryId) : null,
         brand_id: brandId ? parseInt(brandId) : null,
+        condition,
         is_active: isActive,
         images: imageUrls.map((url, i) => ({
           url,
@@ -257,7 +260,7 @@ export default function ProductForm() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5">
             <Input
               label="Material"
               value={material}
@@ -310,6 +313,21 @@ export default function ProductForm() {
                     {b.name}
                   </option>
                 ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Condition
+              </label>
+              <select
+                value={condition}
+                onChange={(e) =>
+                  setCondition(e.target.value as "new" | "preowned")
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              >
+                <option value="new">New</option>
+                <option value="preowned">Pre-Owned</option>
               </select>
             </div>
           </div>

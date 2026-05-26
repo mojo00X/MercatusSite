@@ -57,6 +57,7 @@ class ProductResponse(BaseModel):
     brand_id: Optional[int] = None
     brand: Optional[BrandResponse] = None
     gender: str
+    condition: str = "new"
     material: Optional[str] = None
     is_active: bool
     created_at: datetime
