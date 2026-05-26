@@ -42,20 +42,28 @@ def on_startup():
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables ensured.")
 
-    # Add image_url column to categories if missing (pragmatic mini-migration)
+    # Pragmatic mini-migrations: ensure new columns exist on already-deployed DBs.
+    # Each ALTER runs in its own transaction — on Postgres, a "column already
+    # exists" error aborts the surrounding transaction, which would otherwise
+    # silently skip every later ALTER in the same block.
     from sqlalchemy import text
-    with engine.begin() as conn:
-        try:
-            conn.execute(text("ALTER TABLE categories ADD COLUMN image_url VARCHAR"))
-            logger.info("Added image_url column to categories.")
-        except Exception:
-            pass  # column already exists
 
+    def _add_column_if_missing(sql: str, label: str) -> None:
         try:
-            conn.execute(text("ALTER TABLE products ADD COLUMN brand_id INTEGER REFERENCES brands(id)"))
-            logger.info("Added brand_id column to products.")
+            with engine.begin() as conn:
+                conn.execute(text(sql))
+            logger.info(f"Added column: {label}.")
         except Exception:
-            pass  # column already exists
+            pass  # column already exists, or table not yet created
+
+    _add_column_if_missing(
+        "ALTER TABLE categories ADD COLUMN image_url VARCHAR",
+        "categories.image_url",
+    )
+    _add_column_if_missing(
+        "ALTER TABLE products ADD COLUMN brand_id INTEGER REFERENCES brands(id)",
+        "products.brand_id",
+    )
 
     # Seed a default collection (matches current hero) if none exist
     from app.database import SessionLocal as _S
