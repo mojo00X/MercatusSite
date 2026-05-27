@@ -28,7 +28,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
         {product.condition === "preowned" && (
           <div className="absolute top-3 right-3">
-            <Badge color="green">Pre-Owned</Badge>
+            <Badge color="gray">Pre-Owned</Badge>
           </div>
         )}
       </div>

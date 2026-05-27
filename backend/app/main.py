@@ -72,6 +72,7 @@ def on_startup():
     # Seed a default collection (matches current hero) if none exist
     from app.database import SessionLocal as _S
     from app.models.collection import Collection
+    from app.models.product import Category
     _db = _S()
     try:
         if _db.query(Collection).count() == 0:
@@ -86,6 +87,14 @@ def on_startup():
             ))
             _db.commit()
             logger.info("Seeded default collection.")
+
+        # Ensure a Pre-Owned "category" row exists so admins can upload its tile
+        # image through CategoryManager. The storefront treats this row as the
+        # condition=preowned filter, not as an assignable product category.
+        if not _db.query(Category).filter(Category.slug == "preowned").first():
+            _db.add(Category(name="Pre-Owned", slug="preowned"))
+            _db.commit()
+            logger.info("Seeded Pre-Owned category placeholder.")
     finally:
         _db.close()
 

@@ -88,7 +88,7 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
       <div>
         <h3 className="text-sm font-medium text-gray-900 mb-3">Category</h3>
         <div className="space-y-2">
-          {categories.map((cat) => {
+          {categories.filter((c) => c.slug !== "preowned").map((cat) => {
             const isSelected = selectedCategory === cat.slug;
             return (
               <div key={cat.id}>
@@ -147,6 +147,26 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
               </div>
             );
           })}
+
+          {/* Pre-Owned reads as a category in the UI, but is actually
+              orthogonal — it just toggles condition=preowned. Customers can
+              combine it with a real category (e.g. pre-owned outerwear). */}
+          <label className="flex items-center cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={selectedCondition === "preowned"}
+              onChange={() =>
+                updateFilter(
+                  "condition",
+                  selectedCondition === "preowned" ? "" : "preowned"
+                )
+              }
+              className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+            />
+            <span className="ml-2 text-sm text-gray-700 group-hover:text-black">
+              Pre-Owned
+            </span>
+          </label>
         </div>
       </div>
 
@@ -167,35 +187,6 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
               />
               <span className="ml-2 text-sm text-gray-700 group-hover:text-black capitalize">
                 {g}
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Condition */}
-      <div>
-        <h3 className="text-sm font-medium text-gray-900 mb-3">Condition</h3>
-        <div className="space-y-2">
-          {[
-            { value: "new", label: "New" },
-            { value: "preowned", label: "Pre-Owned" },
-          ].map((c) => (
-            <label key={c.value} className="flex items-center cursor-pointer group">
-              <input
-                type="radio"
-                name="condition"
-                checked={selectedCondition === c.value}
-                onChange={() =>
-                  updateFilter(
-                    "condition",
-                    selectedCondition === c.value ? "" : c.value
-                  )
-                }
-                className="h-4 w-4 border-gray-300 text-black focus:ring-black"
-              />
-              <span className="ml-2 text-sm text-gray-700 group-hover:text-black">
-                {c.label}
               </span>
             </label>
           ))}
