@@ -8,9 +8,13 @@ import Spinner from "../components/ui/Spinner";
 export default function ProductList() {
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const condition = searchParams.get("condition");
   const filters = {
     category: searchParams.get("category") || undefined,
+    brand: searchParams.get("brand") || undefined,
     gender: searchParams.get("gender") || undefined,
+    condition:
+      condition === "preowned" || condition === "new" ? condition : undefined,
     size: searchParams.get("size") || undefined,
     color: searchParams.get("color") || undefined,
     min_price: searchParams.get("min_price")
