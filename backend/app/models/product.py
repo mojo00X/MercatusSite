@@ -43,8 +43,14 @@ class Product(Base):
     base_price = Column(Float, nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id"))
     brand_id = Column(Integer, ForeignKey("brands.id"), nullable=True, index=True)
+    # Nullable so all existing platform-owned products remain valid without
+    # a boutique. A null boutique_id == owned by the platform (you).
+    boutique_id = Column(Integer, ForeignKey("boutiques.id"), nullable=True, index=True)
     gender = Column(String, nullable=False)  # "men", "women", "unisex"
     condition = Column(String, nullable=False, default="new")  # "new" | "preowned"
+    # "self" = boutique fulfills, "platform" = warehouse fulfills. Default
+    # "platform" keeps existing admin-owned products on your current flow.
+    fulfillment_mode = Column(String, nullable=False, default="platform")
     material = Column(String)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -52,6 +58,7 @@ class Product(Base):
 
     category = relationship("Category", back_populates="products")
     brand = relationship("Brand", back_populates="products")
+    boutique = relationship("Boutique", back_populates="products")
     variants = relationship("ProductVariant", back_populates="product", cascade="all, delete-orphan")
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
 

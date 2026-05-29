@@ -158,8 +158,10 @@ def create_product(
         base_price=product_data.base_price,
         category_id=product_data.category_id,
         brand_id=product_data.brand_id,
+        boutique_id=product_data.boutique_id,
         gender=product_data.gender,
         condition=product_data.condition,
+        fulfillment_mode=product_data.fulfillment_mode,
         material=product_data.material,
     )
     db.add(product)

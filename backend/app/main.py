@@ -68,6 +68,27 @@ def on_startup():
         "ALTER TABLE products ADD COLUMN condition VARCHAR NOT NULL DEFAULT 'new'",
         "products.condition",
     )
+    _add_column_if_missing(
+        "ALTER TABLE products ADD COLUMN boutique_id INTEGER REFERENCES boutiques(id)",
+        "products.boutique_id",
+    )
+    _add_column_if_missing(
+        "ALTER TABLE products ADD COLUMN fulfillment_mode VARCHAR NOT NULL DEFAULT 'platform'",
+        "products.fulfillment_mode",
+    )
+    _add_column_if_missing(
+        "ALTER TABLE users ADD COLUMN role VARCHAR NOT NULL DEFAULT 'customer'",
+        "users.role",
+    )
+    # Backfill admins' role so the legacy is_admin flag and the new role enum
+    # stay consistent. Idempotent — re-running just touches the same rows.
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text("UPDATE users SET role = 'admin' WHERE is_admin = TRUE AND role <> 'admin'")
+            )
+    except Exception:
+        pass
 
     # Seed a default collection (matches current hero) if none exist
     from app.database import SessionLocal as _S

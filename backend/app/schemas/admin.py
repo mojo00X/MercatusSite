@@ -32,8 +32,10 @@ class ProductCreate(BaseModel):
     base_price: float
     category_id: Optional[int] = None
     brand_id: Optional[int] = None
+    boutique_id: Optional[int] = None
     gender: str = "unisex"
     condition: str = "new"
+    fulfillment_mode: str = "platform"
     material: Optional[str] = None
     variants: List[VariantCreate] = []
     images: List[ImageInput] = []
@@ -45,8 +47,10 @@ class ProductUpdate(BaseModel):
     base_price: Optional[float] = None
     category_id: Optional[int] = None
     brand_id: Optional[int] = None
+    boutique_id: Optional[int] = None
     gender: Optional[str] = None
     condition: Optional[str] = None
+    fulfillment_mode: Optional[str] = None
     material: Optional[str] = None
     is_active: Optional[bool] = None
     images: Optional[List[ImageInput]] = None

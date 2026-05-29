@@ -46,6 +46,19 @@ class BrandResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ProductBoutiqueRef(BaseModel):
+    """Slim boutique reference embedded on Product responses (avoids the full
+    BoutiqueResponse, which carries operational Stripe state customers should
+    never see)."""
+
+    id: int
+    name: str
+    slug: str
+    logo_url: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
 class ProductResponse(BaseModel):
     id: int
     name: str
@@ -56,8 +69,11 @@ class ProductResponse(BaseModel):
     category: Optional[CategoryResponse] = None
     brand_id: Optional[int] = None
     brand: Optional[BrandResponse] = None
+    boutique_id: Optional[int] = None
+    boutique: Optional[ProductBoutiqueRef] = None
     gender: str
     condition: str = "new"
+    fulfillment_mode: str = "platform"
     material: Optional[str] = None
     is_active: bool
     created_at: datetime

@@ -14,12 +14,17 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=False)
     is_admin = Column(Boolean, default=False)
+    # Role gates the boutique flow without disturbing existing is_admin checks.
+    # Values: "customer" | "boutique" | "admin". `is_admin=True` continues to
+    # work as the platform-admin signal during the transition.
+    role = Column(String, nullable=False, default="customer")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     addresses = relationship("Address", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user")
     cart = relationship("Cart", back_populates="user", uselist=False)
+    boutique = relationship("Boutique", back_populates="owner", uselist=False)
 
 
 class Address(Base):
