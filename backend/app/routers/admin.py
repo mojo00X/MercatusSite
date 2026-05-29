@@ -118,6 +118,28 @@ def admin_list_products(
     return products
 
 
+@router.get("/products/{product_id}", response_model=ProductResponse)
+def admin_get_product(
+    product_id: int,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    product = (
+        db.query(Product)
+        .options(
+            joinedload(Product.variants),
+            joinedload(Product.images),
+            joinedload(Product.category),
+            joinedload(Product.brand),
+        )
+        .filter(Product.id == product_id)
+        .first()
+    )
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    return product
+
+
 @router.post("/products", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 def create_product(
     product_data: ProductCreate,
@@ -215,34 +237,66 @@ def update_product(
             )
 
     if new_variants is not None:
-        existing = {v.id: v for v in product.variants}
+        existing_by_id = {v.id: v for v in product.variants}
+        existing_by_sku = {v.sku: v for v in product.variants}
         kept_ids = set()
         for v in new_variants:
             vid = v.get("id")
-            if vid and vid in existing:
-                variant = existing[vid]
+            payload_sku = (v.get("sku") or "").strip()
+
+            # Match by id first; fall back to SKU so a payload whose id was
+            # lost in the form state still updates the right row instead of
+            # crashing with a duplicate-SKU INSERT.
+            variant = None
+            if vid and vid in existing_by_id:
+                variant = existing_by_id[vid]
+            elif payload_sku and payload_sku in existing_by_sku:
+                variant = existing_by_sku[payload_sku]
+
+            if variant is not None:
                 variant.size = v["size"]
                 variant.color = v["color"]
                 variant.color_hex = v.get("color_hex")
                 variant.price_override = v.get("price_override")
                 variant.stock_quantity = v.get("stock_quantity", 0)
-                if (v.get("sku") or "").strip():
-                    variant.sku = v["sku"].strip()
-                kept_ids.add(vid)
+                if payload_sku and payload_sku != variant.sku:
+                    # SKU rename: only apply if it isn't already used elsewhere.
+                    conflict = (
+                        db.query(ProductVariant.id)
+                        .filter(
+                            ProductVariant.sku == payload_sku,
+                            ProductVariant.id != variant.id,
+                        )
+                        .first()
+                    )
+                    if not conflict:
+                        variant.sku = payload_sku
+                kept_ids.add(variant.id)
             else:
+                # Genuinely new variant. If the supplied SKU collides with a
+                # row on another product, auto-generate to keep the global
+                # unique constraint happy.
+                sku = payload_sku or _generate_sku(
+                    db, product.slug, v["size"], v["color"]
+                )
+                if (
+                    db.query(ProductVariant.id)
+                    .filter(ProductVariant.sku == sku)
+                    .first()
+                ):
+                    sku = _generate_sku(db, product.slug, v["size"], v["color"])
                 db.add(
                     ProductVariant(
                         product_id=product.id,
                         size=v["size"],
                         color=v["color"],
                         color_hex=v.get("color_hex"),
-                        sku=(v.get("sku") or "").strip()
-                        or _generate_sku(db, product.slug, v["size"], v["color"]),
+                        sku=sku,
                         price_override=v.get("price_override"),
                         stock_quantity=v.get("stock_quantity", 0),
                     )
                 )
-        for vid, variant in existing.items():
+        for vid, variant in existing_by_id.items():
             if vid not in kept_ids:
                 db.delete(variant)
 

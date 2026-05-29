@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  getProduct,
+  adminGetProduct,
   getCategories,
   createProduct,
   updateProduct,
@@ -16,6 +16,10 @@ import toast from "react-hot-toast";
 import type { ProductVariant } from "../../types";
 
 interface VariantRow {
+  // Stable React key for the row. Separate from `id` so that newly-added
+  // rows (which have no server id yet) also get a unique key — using array
+  // index as the key let removed rows shift state onto the wrong inputs.
+  _key: string;
   id?: number;
   size: string;
   color: string;
@@ -25,14 +29,18 @@ interface VariantRow {
   sku: string;
 }
 
-const emptyVariant: VariantRow = {
+let _localVariantSeq = 0;
+const makeLocalKey = () => `new-${++_localVariantSeq}-${Date.now()}`;
+
+const newEmptyVariant = (): VariantRow => ({
+  _key: makeLocalKey(),
   size: "M",
   color: "",
   color_hex: "#000000",
   stock: 0,
   price_override: "",
   sku: "",
-};
+});
 
 // Curated palette so variants can't accidentally save a named color with a
 // stale #000000 hex. Click a swatch to fill both `color` and `color_hex`; the
@@ -71,7 +79,7 @@ export default function ProductForm() {
 
   const { data: product, isLoading: loadingProduct } = useQuery({
     queryKey: ["product-edit", id],
-    queryFn: () => getProduct(id!),
+    queryFn: () => adminGetProduct(Number(id)),
     enabled: !!isEdit,
   });
 
@@ -96,7 +104,7 @@ export default function ProductForm() {
   const [isActive, setIsActive] = useState(true);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [variants, setVariants] = useState<VariantRow[]>([{ ...emptyVariant }]);
+  const [variants, setVariants] = useState<VariantRow[]>([newEmptyVariant()]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -119,6 +127,7 @@ export default function ProductForm() {
       if (product.variants?.length) {
         setVariants(
           product.variants.map((v: ProductVariant) => ({
+            _key: `srv-${v.id}`,
             id: v.id,
             size: v.size,
             color: v.color,
@@ -152,9 +161,18 @@ export default function ProductForm() {
     setImageUrls(imageUrls.filter((_, i) => i !== index));
   };
 
-  const addVariant = () => setVariants([...variants, { ...emptyVariant }]);
+  const addVariant = () => setVariants([...variants, newEmptyVariant()]);
 
   const removeVariant = (index: number) => {
+    const target = variants[index];
+    // Only confirm for variants that already exist on the server — removing
+    // them on save deletes the DB row (and any restock history with it).
+    if (target?.id) {
+      const label = [target.size, target.color].filter(Boolean).join(" / ") || "this variant";
+      if (!window.confirm(`Remove ${label}? It will be deleted from the product when you save.`)) {
+        return;
+      }
+    }
     setVariants(variants.filter((_, i) => i !== index));
   };
 
@@ -172,6 +190,21 @@ export default function ProductForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Catch in-form SKU collisions before they reach the backend (where they
+    // surface as opaque 500s due to a unique-constraint violation).
+    const skuCounts = new Map<string, number>();
+    for (const v of variants) {
+      const sku = (v.sku || "").trim();
+      if (!sku) continue;
+      skuCounts.set(sku, (skuCounts.get(sku) || 0) + 1);
+    }
+    const duplicateSku = [...skuCounts.entries()].find(([, n]) => n > 1)?.[0];
+    if (duplicateSku) {
+      toast.error(`Duplicate SKU in variants: ${duplicateSku}`);
+      return;
+    }
+
     try {
       setSaving(true);
       const payload: any = {
@@ -189,11 +222,24 @@ export default function ProductForm() {
           is_primary: i === 0,
           sort_order: i,
         })),
-        variants: variants.map((v) => ({
-          ...v,
-          stock_quantity: Number(v.stock),
-          price_override: v.price_override ? parseFloat(v.price_override) : null,
-        })),
+        variants: variants.map((v) => {
+          // Build the payload explicitly so the client-only `_key` and `stock`
+          // fields don't leak, and `id` is included only when the variant
+          // actually has a server id (a falsy id would be sent as null and the
+          // backend would treat the row as new).
+          const out: Record<string, unknown> = {
+            size: v.size,
+            color: v.color,
+            color_hex: v.color_hex,
+            sku: v.sku,
+            stock_quantity: Number(v.stock),
+            price_override: v.price_override
+              ? parseFloat(v.price_override)
+              : null,
+          };
+          if (v.id) out.id = v.id;
+          return out;
+        }),
       };
 
       if (isEdit) {
@@ -407,7 +453,7 @@ export default function ProductForm() {
               );
               return (
                 <div
-                  key={i}
+                  key={v._key}
                   className="p-4 bg-gray-50 rounded-lg space-y-3"
                 >
                   <div className="grid grid-cols-2 md:grid-cols-7 gap-3 items-end">

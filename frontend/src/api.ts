@@ -105,6 +105,11 @@ export async function getProduct(slug: string): Promise<Product> {
   return data;
 }
 
+export async function adminGetProduct(id: number): Promise<Product> {
+  const { data } = await client.get(`/admin/products/${id}`);
+  return data;
+}
+
 export async function getCategories(): Promise<Category[]> {
   const { data } = await client.get("/products/categories");
   return data;
