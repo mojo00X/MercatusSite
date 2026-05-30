@@ -4,6 +4,7 @@ import type {
   Product,
   Category,
   Brand,
+  Boutique,
   Cart,
   Collection,
   Order,
@@ -308,4 +309,49 @@ export async function adminUpdateBrand(
 
 export async function adminDeleteBrand(id: number): Promise<void> {
   await client.delete(`/admin/brands/${id}`);
+}
+
+interface BoutiqueRegisterResponse {
+  access_token: string;
+  token_type: string;
+  boutique: Boutique;
+  onboarding_url: string | null;
+}
+
+export async function registerBoutique(payload: {
+  email: string;
+  password: string;
+  full_name: string;
+  boutique_name: string;
+  bio?: string;
+}): Promise<BoutiqueRegisterResponse> {
+  const { data } = await client.post("/boutique/register", payload);
+  return data;
+}
+
+export async function getMyBoutique(): Promise<Boutique> {
+  const { data } = await client.get("/boutique/me");
+  return data;
+}
+
+export async function updateMyBoutique(
+  payload: Partial<Pick<Boutique, "name" | "bio" | "logo_url" | "banner_url">>
+): Promise<Boutique> {
+  const { data } = await client.put("/boutique/me", payload);
+  return data;
+}
+
+export async function getBoutiqueOnboardingLink(): Promise<{ url: string }> {
+  const { data } = await client.post("/boutique/onboarding-link");
+  return data;
+}
+
+export async function refreshBoutiqueStatus(): Promise<Boutique> {
+  const { data } = await client.post("/boutique/refresh-status");
+  return data;
+}
+
+export async function getBoutiqueDashboardLink(): Promise<{ url: string }> {
+  const { data } = await client.post("/boutique/dashboard-link");
+  return data;
 }

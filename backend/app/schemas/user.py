@@ -15,11 +15,24 @@ class UserLogin(BaseModel):
     password: str
 
 
+class UserBoutiqueRef(BaseModel):
+    """Slim boutique reference on the user shape so the frontend can route
+    a signed-in boutique owner to their dashboard without a second fetch."""
+
+    id: int
+    name: str
+    slug: str
+
+    model_config = {"from_attributes": True}
+
+
 class UserResponse(BaseModel):
     id: int
     email: str
     full_name: str
     is_admin: bool
+    role: str = "customer"
+    boutique: Optional[UserBoutiqueRef] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

@@ -21,6 +21,10 @@ import Register from "./pages/Register";
 import Account from "./pages/Account";
 import OrderHistory from "./pages/OrderHistory";
 import OrderDetail from "./pages/OrderDetail";
+import BoutiqueRegister from "./pages/BoutiqueRegister";
+import BoutiqueDashboard from "./pages/BoutiqueDashboard";
+import BoutiqueOnboardingReturn from "./pages/BoutiqueOnboardingReturn";
+import BoutiqueOnboardingRefresh from "./pages/BoutiqueOnboardingRefresh";
 
 import Dashboard from "./pages/admin/Dashboard";
 import ProductManager from "./pages/admin/ProductManager";
@@ -91,6 +95,31 @@ export default function App() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/boutique/register" element={<BoutiqueRegister />} />
+                <Route
+                  path="/boutique/onboarding/return"
+                  element={
+                    <ProtectedRoute>
+                      <BoutiqueOnboardingReturn />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/boutique/onboarding/refresh"
+                  element={
+                    <ProtectedRoute>
+                      <BoutiqueOnboardingRefresh />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/boutique/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <BoutiqueDashboard />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/checkout/success" element={<CheckoutSuccess />} />
 
                 {/* Protected routes */}

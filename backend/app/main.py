@@ -4,7 +4,16 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import Base, engine
-from app.routers import admin, auth, cart, checkout, collections, orders, products
+from app.routers import (
+    admin,
+    auth,
+    boutique,
+    cart,
+    checkout,
+    collections,
+    orders,
+    products,
+)
 
 app = FastAPI(title="Mirevi API", version="1.0.0")
 
@@ -26,6 +35,7 @@ app.include_router(checkout.router, prefix="/api/checkout", tags=["Checkout"])
 app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
 app.include_router(collections.router, prefix="/api/collections", tags=["Collections"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
+app.include_router(boutique.router, prefix="/api/boutique", tags=["Boutique"])
 
 # Static files
 app.mount("/static", StaticFiles(directory="static"), name="static")

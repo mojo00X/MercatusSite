@@ -3,6 +3,22 @@ export interface User {
   email: string;
   full_name: string;
   is_admin: boolean;
+  role?: "customer" | "boutique" | "admin";
+  boutique?: { id: number; name: string; slug: string } | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Boutique {
+  id: number;
+  name: string;
+  slug: string;
+  bio?: string | null;
+  logo_url?: string | null;
+  banner_url?: string | null;
+  stripe_charges_enabled: boolean;
+  stripe_payouts_enabled: boolean;
+  stripe_details_submitted: boolean;
   is_active: boolean;
   created_at: string;
 }
@@ -56,6 +72,9 @@ export interface Product {
   category?: Category;
   brand_id?: number | null;
   brand?: Brand | null;
+  boutique_id?: number | null;
+  boutique?: { id: number; name: string; slug: string; logo_url?: string | null } | null;
+  fulfillment_mode?: "self" | "platform";
   images: ProductImage[];
   variants: ProductVariant[];
   created_at: string;

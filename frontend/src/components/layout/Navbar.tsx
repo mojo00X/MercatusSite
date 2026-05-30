@@ -124,6 +124,15 @@ export default function Navbar() {
                           Admin Panel
                         </Link>
                       )}
+                      {user.role === "boutique" && (
+                        <Link
+                          to="/boutique/dashboard"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          Boutique Dashboard
+                        </Link>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -146,6 +155,13 @@ export default function Navbar() {
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         Create Account
+                      </Link>
+                      <Link
+                        to="/boutique/register"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                      >
+                        Sell on Mirevi
                       </Link>
                     </>
                   )}
