@@ -32,6 +32,15 @@ from app.schemas.collection import (
 from app.schemas.order import OrderListResponse, OrderResponse
 from app.schemas.product import BrandResponse, CategoryResponse, ProductResponse
 from app.schemas.user import UserResponse
+from app.services.product_service import (
+    apply_variants,
+    create_images_for_new_product,
+    create_variants_for_new_product,
+    generate_sku,
+    replace_images,
+    slugify,
+    unique_product_slug,
+)
 
 router = APIRouter()
 
@@ -41,22 +50,6 @@ def _slugify(text: str) -> str:
     text = re.sub(r"[^\w\s-]", "", text)
     text = re.sub(r"[\s_]+", "-", text)
     return text
-
-
-def _generate_sku(db: Session, slug: str, size: str, color: str) -> str:
-    """Build a unique SKU from product/variant attributes.
-
-    The admin form has no SKU input, so variants arrive with an empty SKU.
-    ``ProductVariant.sku`` is UNIQUE/NOT NULL, so blank SKUs collide as soon
-    as more than one exists. Generate a deterministic-but-unique value here.
-    """
-    base = "-".join(
-        p for p in (_slugify(slug), _slugify(size or ""), _slugify(color or "")) if p
-    ) or "sku"
-    sku = base
-    while db.query(ProductVariant.id).filter(ProductVariant.sku == sku).first():
-        sku = f"{base}-{uuid.uuid4().hex[:6]}"
-    return sku
 
 
 # ── Dashboard ────────────────────────────────────────────────────────────────
@@ -146,14 +139,9 @@ def create_product(
     admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    slug = _slugify(product_data.name)
-    existing = db.query(Product).filter(Product.slug == slug).first()
-    if existing:
-        slug = f"{slug}-{uuid.uuid4().hex[:6]}"
-
     product = Product(
         name=product_data.name,
-        slug=slug,
+        slug=unique_product_slug(db, product_data.name),
         description=product_data.description,
         base_price=product_data.base_price,
         category_id=product_data.category_id,
@@ -166,30 +154,8 @@ def create_product(
     )
     db.add(product)
     db.flush()
-
-    for v in product_data.variants:
-        variant = ProductVariant(
-            product_id=product.id,
-            size=v.size,
-            color=v.color,
-            color_hex=v.color_hex,
-            sku=(v.sku or "").strip() or _generate_sku(db, slug, v.size, v.color),
-            price_override=v.price_override,
-            stock_quantity=v.stock_quantity,
-        )
-        db.add(variant)
-
-    for img in product_data.images:
-        db.add(
-            ProductImage(
-                product_id=product.id,
-                url=img.url,
-                alt_text=img.alt_text,
-                is_primary=img.is_primary,
-                sort_order=img.sort_order,
-            )
-        )
-
+    create_variants_for_new_product(db, product, product_data.variants)
+    create_images_for_new_product(db, product, product_data.images)
     db.commit()
     db.refresh(product)
     return product
@@ -223,84 +189,12 @@ def update_product(
         setattr(product, key, value)
 
     if "name" in update_dict:
-        product.slug = _slugify(update_dict["name"])
+        product.slug = slugify(update_dict["name"])
 
     if new_images is not None:
-        db.query(ProductImage).filter(ProductImage.product_id == product.id).delete()
-        for img in new_images:
-            db.add(
-                ProductImage(
-                    product_id=product.id,
-                    url=img["url"],
-                    alt_text=img.get("alt_text"),
-                    is_primary=img.get("is_primary", False),
-                    sort_order=img.get("sort_order", 0),
-                )
-            )
-
+        replace_images(db, product, new_images)
     if new_variants is not None:
-        existing_by_id = {v.id: v for v in product.variants}
-        existing_by_sku = {v.sku: v for v in product.variants}
-        kept_ids = set()
-        for v in new_variants:
-            vid = v.get("id")
-            payload_sku = (v.get("sku") or "").strip()
-
-            # Match by id first; fall back to SKU so a payload whose id was
-            # lost in the form state still updates the right row instead of
-            # crashing with a duplicate-SKU INSERT.
-            variant = None
-            if vid and vid in existing_by_id:
-                variant = existing_by_id[vid]
-            elif payload_sku and payload_sku in existing_by_sku:
-                variant = existing_by_sku[payload_sku]
-
-            if variant is not None:
-                variant.size = v["size"]
-                variant.color = v["color"]
-                variant.color_hex = v.get("color_hex")
-                variant.price_override = v.get("price_override")
-                variant.stock_quantity = v.get("stock_quantity", 0)
-                if payload_sku and payload_sku != variant.sku:
-                    # SKU rename: only apply if it isn't already used elsewhere.
-                    conflict = (
-                        db.query(ProductVariant.id)
-                        .filter(
-                            ProductVariant.sku == payload_sku,
-                            ProductVariant.id != variant.id,
-                        )
-                        .first()
-                    )
-                    if not conflict:
-                        variant.sku = payload_sku
-                kept_ids.add(variant.id)
-            else:
-                # Genuinely new variant. If the supplied SKU collides with a
-                # row on another product, auto-generate to keep the global
-                # unique constraint happy.
-                sku = payload_sku or _generate_sku(
-                    db, product.slug, v["size"], v["color"]
-                )
-                if (
-                    db.query(ProductVariant.id)
-                    .filter(ProductVariant.sku == sku)
-                    .first()
-                ):
-                    sku = _generate_sku(db, product.slug, v["size"], v["color"])
-                db.add(
-                    ProductVariant(
-                        product_id=product.id,
-                        size=v["size"],
-                        color=v["color"],
-                        color_hex=v.get("color_hex"),
-                        sku=sku,
-                        price_override=v.get("price_override"),
-                        stock_quantity=v.get("stock_quantity", 0),
-                    )
-                )
-        for vid, variant in existing_by_id.items():
-            if vid not in kept_ids:
-                db.delete(variant)
+        apply_variants(db, product, new_variants)
 
     product.updated_at = datetime.utcnow()
     db.commit()

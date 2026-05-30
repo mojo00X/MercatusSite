@@ -355,3 +355,55 @@ export async function getBoutiqueDashboardLink(): Promise<{ url: string }> {
   const { data } = await client.post("/boutique/dashboard-link");
   return data;
 }
+
+export async function getBoutiqueProducts(): Promise<Product[]> {
+  const { data } = await client.get("/boutique/products");
+  return data;
+}
+
+export async function getBoutiqueProduct(id: number): Promise<Product> {
+  const { data } = await client.get(`/boutique/products/${id}`);
+  return data;
+}
+
+export async function createBoutiqueProduct(
+  payload: Partial<Product>
+): Promise<Product> {
+  const { data } = await client.post("/boutique/products", payload);
+  return data;
+}
+
+export async function updateBoutiqueProduct(
+  id: number,
+  payload: Partial<Product>
+): Promise<Product> {
+  const { data } = await client.put(`/boutique/products/${id}`, payload);
+  return data;
+}
+
+export async function deleteBoutiqueProduct(id: number): Promise<void> {
+  await client.delete(`/boutique/products/${id}`);
+}
+
+export async function getBoutiqueOrders(): Promise<Order[]> {
+  const { data } = await client.get("/boutique/orders");
+  return data;
+}
+
+export async function getBoutiqueOrder(id: number): Promise<Order> {
+  const { data } = await client.get(`/boutique/orders/${id}`);
+  return data;
+}
+
+export interface BoutiqueStats {
+  total_revenue: number;
+  total_orders: number;
+  recent_orders: number;
+  total_products: number;
+  low_stock_count: number;
+}
+
+export async function getBoutiqueStats(): Promise<BoutiqueStats> {
+  const { data } = await client.get("/boutique/stats");
+  return data;
+}

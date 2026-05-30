@@ -23,8 +23,14 @@ import OrderHistory from "./pages/OrderHistory";
 import OrderDetail from "./pages/OrderDetail";
 import BoutiqueRegister from "./pages/BoutiqueRegister";
 import BoutiqueDashboard from "./pages/BoutiqueDashboard";
+import BoutiqueProducts from "./pages/BoutiqueProducts";
+import BoutiqueProductForm from "./pages/BoutiqueProductForm";
+import BoutiqueOrders from "./pages/BoutiqueOrders";
+import BoutiqueSettings from "./pages/BoutiqueSettings";
+import BoutiquePayouts from "./pages/BoutiquePayouts";
 import BoutiqueOnboardingReturn from "./pages/BoutiqueOnboardingReturn";
 import BoutiqueOnboardingRefresh from "./pages/BoutiqueOnboardingRefresh";
+import BoutiqueSidebar from "./components/layout/BoutiqueSidebar";
 
 import Dashboard from "./pages/admin/Dashboard";
 import ProductManager from "./pages/admin/ProductManager";
@@ -62,6 +68,17 @@ function AdminLayout() {
   return (
     <div className="min-h-screen flex bg-gray-50">
       <AdminSidebar />
+      <main className="flex-1 p-8 overflow-auto">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+
+function BoutiqueLayout() {
+  return (
+    <div className="min-h-screen flex bg-gray-50">
+      <BoutiqueSidebar />
       <main className="flex-1 p-8 overflow-auto">
         <Outlet />
       </main>
@@ -109,14 +126,6 @@ export default function App() {
                   element={
                     <ProtectedRoute>
                       <BoutiqueOnboardingRefresh />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/boutique/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <BoutiqueDashboard />
                     </ProtectedRoute>
                   }
                 />
@@ -175,6 +184,24 @@ export default function App() {
                 <Route path="/admin/inventory" element={<InventoryManager />} />
                 <Route path="/admin/orders" element={<OrderManager />} />
                 <Route path="/admin/users" element={<UserManager />} />
+              </Route>
+
+              {/* Boutique routes — sidebar layout, no role gate at the
+                  router level because boutique APIs already 403. */}
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <BoutiqueLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/boutique/dashboard" element={<BoutiqueDashboard />} />
+                <Route path="/boutique/products" element={<BoutiqueProducts />} />
+                <Route path="/boutique/products/new" element={<BoutiqueProductForm />} />
+                <Route path="/boutique/products/:id/edit" element={<BoutiqueProductForm />} />
+                <Route path="/boutique/orders" element={<BoutiqueOrders />} />
+                <Route path="/boutique/settings" element={<BoutiqueSettings />} />
+                <Route path="/boutique/payouts" element={<BoutiquePayouts />} />
               </Route>
             </Routes>
           </CartProvider>
