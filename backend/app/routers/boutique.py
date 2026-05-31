@@ -12,11 +12,13 @@ from app.dependencies import get_current_user, get_db
 from app.models.boutique import Boutique
 from app.models.order import Order, OrderItem
 from app.models.product import Product, ProductImage, ProductVariant
+from app.models.shipment import Shipment
 from app.models.user import User
 from app.schemas.admin import ProductCreate, ProductUpdate
 from app.schemas.boutique import BoutiqueRegister, BoutiqueResponse, BoutiqueUpdate
 from app.schemas.order import OrderResponse
 from app.schemas.product import ProductResponse
+from app.schemas.shipment import ShipmentResponse, ShipmentShipPayload
 from app.schemas.user import Token
 from app.services.auth import create_access_token, hash_password
 from app.services.product_service import (
@@ -365,6 +367,58 @@ def get_my_order(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
+
+
+# ── Shipments (boutique-scoped self-ship queue) ─────────────────────────────
+
+
+@router.get("/shipments", response_model=List[ShipmentResponse])
+def list_my_shipments(
+    boutique: Boutique = Depends(require_boutique),
+    db: Session = Depends(get_db),
+):
+    """Self-ship shipments the boutique is responsible for fulfilling.
+
+    Platform-fulfilled shipments don't appear here — those are the warehouse's
+    job and show up in the admin queue."""
+    return (
+        db.query(Shipment)
+        .options(joinedload(Shipment.items))
+        .filter(
+            Shipment.boutique_id == boutique.id,
+            Shipment.fulfillment_mode == "self",
+        )
+        .order_by(Shipment.created_at.desc())
+        .all()
+    )
+
+
+@router.put("/shipments/{shipment_id}/ship", response_model=ShipmentResponse)
+def mark_my_shipment_shipped(
+    shipment_id: int,
+    payload: ShipmentShipPayload,
+    boutique: Boutique = Depends(require_boutique),
+    db: Session = Depends(get_db),
+):
+    shipment = (
+        db.query(Shipment)
+        .filter(
+            Shipment.id == shipment_id,
+            Shipment.boutique_id == boutique.id,
+            Shipment.fulfillment_mode == "self",
+        )
+        .first()
+    )
+    if not shipment:
+        raise HTTPException(status_code=404, detail="Shipment not found")
+    shipment.tracking_number = payload.tracking_number
+    shipment.carrier = payload.carrier
+    shipment.tracking_url = payload.tracking_url
+    shipment.status = "shipped"
+    shipment.shipped_at = datetime.utcnow()
+    db.commit()
+    db.refresh(shipment)
+    return shipment
 
 
 # ── Stats ───────────────────────────────────────────────────────────────────

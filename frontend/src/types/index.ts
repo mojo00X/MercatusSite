@@ -112,6 +112,7 @@ export interface OrderItem {
   id: number;
   product_id: number;
   variant_id: number;
+  shipment_id?: number | null;
   product_name: string;
   size: string;
   color: string;
@@ -120,15 +121,44 @@ export interface OrderItem {
   product?: Product;
 }
 
+export interface Shipment {
+  id: number;
+  order_id: number;
+  fulfillment_mode: "self" | "platform";
+  boutique_id?: number | null;
+  status: "pending" | "shipped" | "delivered" | "cancelled";
+  tracking_number?: string | null;
+  carrier?: string | null;
+  tracking_url?: string | null;
+  shipped_at?: string | null;
+  created_at: string;
+  items: Array<{
+    id: number;
+    quantity: number;
+    product_name: string;
+    size?: string | null;
+    color?: string | null;
+  }>;
+}
+
+export interface ShipPayload {
+  tracking_number: string;
+  carrier: string;
+  tracking_url?: string;
+}
+
 export interface Order {
   id: number;
   user_id: number;
   status: string;
   total_amount: number;
+  platform_fee_amount?: number;
   /** JSON string: { name?, street, city, state, zip, country }. Parse with parseShippingAddress(). */
   shipping_address?: string | null;
   stripe_session_id?: string;
+  stripe_charge_id?: string | null;
   items: OrderItem[];
+  shipments?: Shipment[];
   created_at: string;
   updated_at: string;
 }

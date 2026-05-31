@@ -3,10 +3,13 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
+from app.schemas.shipment import ShipmentResponse
+
 
 class OrderItemResponse(BaseModel):
     id: int
     variant_id: int
+    shipment_id: Optional[int] = None
     quantity: int
     unit_price: float
     product_name: str
@@ -28,6 +31,7 @@ class OrderResponse(BaseModel):
     shipping_address: Optional[str] = None
     created_at: datetime
     items: List[OrderItemResponse] = []
+    shipments: List[ShipmentResponse] = []
 
     model_config = {"from_attributes": True}
 

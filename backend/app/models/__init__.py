@@ -3,6 +3,7 @@ from app.models.product import Brand, Category, Product, ProductVariant, Product
 from app.models.boutique import Boutique
 from app.models.cart import Cart, CartItem
 from app.models.order import Order, OrderItem
+from app.models.shipment import Shipment
 from app.models.collection import Collection
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "CartItem",
     "Order",
     "OrderItem",
+    "Shipment",
     "Collection",
 ]

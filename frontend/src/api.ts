@@ -12,6 +12,8 @@ import type {
   PaginatedResponse,
   ProductFilters,
   AdminStats,
+  Shipment,
+  ShipPayload,
 } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
@@ -419,5 +421,34 @@ export async function getPublicBoutiques(
 
 export async function getPublicBoutique(slug: string): Promise<BoutiquePublic> {
   const { data } = await client.get(`/boutiques/${slug}`);
+  return data;
+}
+
+export async function getBoutiqueShipments(): Promise<Shipment[]> {
+  const { data } = await client.get("/boutique/shipments");
+  return data;
+}
+
+export async function markBoutiqueShipmentShipped(
+  id: number,
+  payload: ShipPayload
+): Promise<Shipment> {
+  const { data } = await client.put(`/boutique/shipments/${id}/ship`, payload);
+  return data;
+}
+
+export async function getAdminShipments(params?: {
+  fulfillment_mode?: string;
+  status_filter?: string;
+}): Promise<Shipment[]> {
+  const { data } = await client.get("/admin/shipments", { params });
+  return data;
+}
+
+export async function markAdminShipmentShipped(
+  id: number,
+  payload: ShipPayload
+): Promise<Shipment> {
+  const { data } = await client.put(`/admin/shipments/${id}/ship`, payload);
   return data;
 }

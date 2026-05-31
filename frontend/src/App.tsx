@@ -26,6 +26,7 @@ import BoutiqueDashboard from "./pages/BoutiqueDashboard";
 import BoutiqueProducts from "./pages/BoutiqueProducts";
 import BoutiqueProductForm from "./pages/BoutiqueProductForm";
 import BoutiqueOrders from "./pages/BoutiqueOrders";
+import BoutiqueShipments from "./pages/BoutiqueShipments";
 import BoutiqueSettings from "./pages/BoutiqueSettings";
 import BoutiquePayouts from "./pages/BoutiquePayouts";
 import BoutiqueOnboardingReturn from "./pages/BoutiqueOnboardingReturn";
@@ -43,6 +44,7 @@ import UserManager from "./pages/admin/UserManager";
 import CategoryManager from "./pages/admin/CategoryManager";
 import BrandManager from "./pages/admin/BrandManager";
 import CollectionManager from "./pages/admin/CollectionManager";
+import AdminShipments from "./pages/admin/AdminShipments";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -187,6 +189,7 @@ export default function App() {
                 <Route path="/admin/collections" element={<CollectionManager />} />
                 <Route path="/admin/inventory" element={<InventoryManager />} />
                 <Route path="/admin/orders" element={<OrderManager />} />
+                <Route path="/admin/shipments" element={<AdminShipments />} />
                 <Route path="/admin/users" element={<UserManager />} />
               </Route>
 
@@ -204,6 +207,7 @@ export default function App() {
                 <Route path="/boutique/products/new" element={<BoutiqueProductForm />} />
                 <Route path="/boutique/products/:id/edit" element={<BoutiqueProductForm />} />
                 <Route path="/boutique/orders" element={<BoutiqueOrders />} />
+                <Route path="/boutique/shipments" element={<BoutiqueShipments />} />
                 <Route path="/boutique/settings" element={<BoutiqueSettings />} />
                 <Route path="/boutique/payouts" element={<BoutiquePayouts />} />
               </Route>

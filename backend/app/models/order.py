@@ -25,6 +25,9 @@ class Order(Base):
 
     user = relationship("User", back_populates="orders")
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    shipments = relationship(
+        "Shipment", back_populates="order", cascade="all, delete-orphan"
+    )
 
 
 class OrderItem(Base):
@@ -33,6 +36,11 @@ class OrderItem(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
     variant_id = Column(Integer, ForeignKey("product_variants.id"), nullable=False)
+    # Set on order creation by the fulfillment grouping logic. Nullable so
+    # legacy orders from before this column existed still load.
+    shipment_id = Column(
+        Integer, ForeignKey("shipments.id"), nullable=True, index=True
+    )
     quantity = Column(Integer, nullable=False)
     unit_price = Column(Float, nullable=False)
     product_name = Column(String, nullable=False)
@@ -41,3 +49,4 @@ class OrderItem(Base):
 
     order = relationship("Order", back_populates="items")
     variant = relationship("ProductVariant")
+    shipment = relationship("Shipment", back_populates="items")

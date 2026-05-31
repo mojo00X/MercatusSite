@@ -13,6 +13,7 @@ from app.dependencies import get_db, require_admin
 from app.models.collection import Collection
 from app.models.order import Order, OrderItem
 from app.models.product import Brand, Category, Product, ProductImage, ProductVariant
+from app.models.shipment import Shipment
 from app.models.user import User
 from app.schemas.admin import (
     BrandCreate,
@@ -23,6 +24,7 @@ from app.schemas.admin import (
     RestockRequest,
     VariantUpdate,
 )
+from app.schemas.shipment import ShipmentResponse, ShipmentShipPayload
 from app.schemas.collection import (
     CategoryImageUpdate,
     CollectionCreate,
@@ -416,6 +418,46 @@ def admin_update_category_image(
     db.commit()
     db.refresh(category)
     return category
+
+
+# ── Shipments (admin warehouse queue) ───────────────────────────────────────
+
+
+@router.get("/shipments", response_model=List[ShipmentResponse])
+def admin_list_shipments(
+    fulfillment_mode: Optional[str] = None,
+    status_filter: Optional[str] = None,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """All shipments across the platform. By default the admin warehouse view
+    filters to platform-fulfilled pending shipments — that's the work queue."""
+    query = db.query(Shipment).options(joinedload(Shipment.items))
+    if fulfillment_mode:
+        query = query.filter(Shipment.fulfillment_mode == fulfillment_mode)
+    if status_filter:
+        query = query.filter(Shipment.status == status_filter)
+    return query.order_by(Shipment.created_at.desc()).all()
+
+
+@router.put("/shipments/{shipment_id}/ship", response_model=ShipmentResponse)
+def admin_mark_shipment_shipped(
+    shipment_id: int,
+    payload: ShipmentShipPayload,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    shipment = db.query(Shipment).filter(Shipment.id == shipment_id).first()
+    if not shipment:
+        raise HTTPException(status_code=404, detail="Shipment not found")
+    shipment.tracking_number = payload.tracking_number
+    shipment.carrier = payload.carrier
+    shipment.tracking_url = payload.tracking_url
+    shipment.status = "shipped"
+    shipment.shipped_at = datetime.utcnow()
+    db.commit()
+    db.refresh(shipment)
+    return shipment
 
 
 # ── Brands ───────────────────────────────────────────────────────────────────

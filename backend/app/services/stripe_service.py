@@ -10,6 +10,7 @@ from app.config import settings
 from app.models.boutique import Boutique
 from app.models.cart import Cart
 from app.models.order import Order, OrderItem
+from app.models.shipment import Shipment
 
 logger = logging.getLogger("uvicorn.error")
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -130,6 +131,9 @@ def _process_completed_checkout(session: dict, db: Session) -> None:
     boutique_totals: Dict[int, Dict[str, int]] = defaultdict(
         lambda: {"gross": 0, "fee": 0}
     )
+    # Group order items by who fulfills them so we can spin up one Shipment
+    # per group below. Key is ("self", boutique_id) or ("platform", None).
+    shipment_groups: Dict[tuple, list] = defaultdict(list)
 
     for item in cart.items:
         variant = item.variant
@@ -148,16 +152,24 @@ def _process_completed_checkout(session: dict, db: Session) -> None:
             boutique_totals[product.boutique_id]["gross"] += line_total_cents
             boutique_totals[product.boutique_id]["fee"] += fee_cents
 
-        order_items.append(
-            OrderItem(
-                variant_id=variant.id,
-                quantity=item.quantity,
-                unit_price=price,
-                product_name=product.name,
-                size=variant.size,
-                color=variant.color,
-            )
+        oi = OrderItem(
+            variant_id=variant.id,
+            quantity=item.quantity,
+            unit_price=price,
+            product_name=product.name,
+            size=variant.size,
+            color=variant.color,
         )
+        order_items.append(oi)
+
+        # Determine which shipment bucket this item lands in.
+        if product.fulfillment_mode == "self" and product.boutique_id is not None:
+            shipment_groups[("self", product.boutique_id)].append(oi)
+        else:
+            # platform-ship items (or boutique items with no fulfillment_mode
+            # set, which fall back to platform default) all go through the
+            # warehouse.
+            shipment_groups[("platform", None)].append(oi)
 
         # Decrement stock
         variant.stock_quantity = max(0, variant.stock_quantity - item.quantity)
@@ -213,7 +225,23 @@ def _process_completed_checkout(session: dict, db: Session) -> None:
         items=order_items,
     )
     db.add(order)
-    db.flush()  # need order.id for the idempotency keys
+    db.flush()  # need order.id for the idempotency keys and shipments
+
+    # Materialize shipments. Each group becomes one Shipment row; its items
+    # get back-linked via shipment_id.
+    for (mode, boutique_id), items_in_group in shipment_groups.items():
+        if not items_in_group:
+            continue
+        shipment = Shipment(
+            order_id=order.id,
+            fulfillment_mode=mode,
+            boutique_id=boutique_id,
+            status="pending",
+        )
+        db.add(shipment)
+        db.flush()  # need shipment.id
+        for oi in items_in_group:
+            oi.shipment_id = shipment.id
 
     # Clear cart
     for item in cart.items:

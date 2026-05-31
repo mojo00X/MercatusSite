@@ -82,26 +82,110 @@ export default function OrderDetail() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Items */}
-        <div className="lg:col-span-2">
-          <h2 className="text-lg font-semibold mb-4">Items</h2>
-          <div className="border rounded-lg divide-y">
-            {order.items?.map((item) => (
-              <div key={item.id} className="p-4 flex justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {item.product_name}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    Size: {item.size} / Color: {item.color} / Qty: {item.quantity}
-                  </p>
+        {/* Items + shipments */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* If the order has multiple shipments (boutique self-ship + warehouse
+              etc.) we group items under their shipment so the customer can see
+              "Shipped by Style Lounge — tracking USPS xyz" alongside "Shipped
+              by Mirevi — tracking pending". Falls back to a flat item list for
+              older orders without shipment links. */}
+          {order.shipments && order.shipments.length > 0 ? (
+            order.shipments.map((shipment) => {
+              const shipmentItems =
+                order.items?.filter(
+                  (i) => i.shipment_id === shipment.id
+                ) ?? [];
+              return (
+                <div key={shipment.id}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h2 className="text-base font-semibold text-gray-900">
+                        {shipment.fulfillment_mode === "self"
+                          ? "Shipped by boutique"
+                          : "Shipped by Mirevi"}
+                      </h2>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Shipment #{shipment.id}
+                      </p>
+                    </div>
+                    <Badge
+                      color={
+                        shipment.status === "shipped" ||
+                        shipment.status === "delivered"
+                          ? "green"
+                          : shipment.status === "cancelled"
+                            ? "red"
+                            : "yellow"
+                      }
+                    >
+                      {shipment.status}
+                    </Badge>
+                  </div>
+                  <div className="border rounded-lg divide-y">
+                    {shipmentItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-4 flex justify-between"
+                      >
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {item.product_name}
+                          </p>
+                          <p className="text-sm text-gray-500 mt-0.5">
+                            Size: {item.size} / Color: {item.color} / Qty:{" "}
+                            {item.quantity}
+                          </p>
+                        </div>
+                        <p className="font-medium">
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  {shipment.tracking_number && (
+                    <p className="mt-3 text-xs text-gray-600">
+                      {shipment.carrier} · {shipment.tracking_number}
+                      {shipment.tracking_url && (
+                        <>
+                          {" · "}
+                          <a
+                            href={shipment.tracking_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-black underline"
+                          >
+                            Track package
+                          </a>
+                        </>
+                      )}
+                    </p>
+                  )}
                 </div>
-                <p className="font-medium">
-                  ${(item.price * item.quantity).toFixed(2)}
-                </p>
+              );
+            })
+          ) : (
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Items</h2>
+              <div className="border rounded-lg divide-y">
+                {order.items?.map((item) => (
+                  <div key={item.id} className="p-4 flex justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {item.product_name}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-0.5">
+                        Size: {item.size} / Color: {item.color} / Qty:{" "}
+                        {item.quantity}
+                      </p>
+                    </div>
+                    <p className="font-medium">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Details */}

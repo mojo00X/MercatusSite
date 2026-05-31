@@ -100,6 +100,10 @@ def on_startup():
         "ALTER TABLE orders ADD COLUMN stripe_charge_id VARCHAR",
         "orders.stripe_charge_id",
     )
+    _add_column_if_missing(
+        "ALTER TABLE order_items ADD COLUMN shipment_id INTEGER REFERENCES shipments(id)",
+        "order_items.shipment_id",
+    )
     # Backfill admins' role so the legacy is_admin flag and the new role enum
     # stay consistent. Idempotent — re-running just touches the same rows.
     try:
