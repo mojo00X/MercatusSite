@@ -51,6 +51,7 @@ def create_session(
         session = create_checkout_session(
             cart,
             db,
+            customer_email=user.email,
             shipping_address=shipping.model_dump() if shipping else None,
         )
         return {"checkout_url": session.url, "session_id": session.id}

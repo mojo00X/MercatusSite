@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { Category } from "../../types";
-import { getBrands } from "../../api";
+import { getBrands, getPublicBoutiques } from "../../api";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 const GENDERS = ["men", "women", "unisex"];
@@ -16,6 +16,7 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
 
   const selectedCategory = searchParams.get("category") || "";
   const selectedBrand = searchParams.get("brand") || "";
+  const selectedBoutique = searchParams.get("boutique") || "";
   const selectedGender = searchParams.get("gender") || "";
   const selectedCondition = searchParams.get("condition") || "";
   const selectedSize = searchParams.get("size") || "";
@@ -26,6 +27,14 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
     queryKey: ["brands", selectedCategory],
     queryFn: () => getBrands(selectedCategory || undefined),
     enabled: !!selectedCategory,
+  });
+
+  // Boutiques shown in the filter are scoped to the selected category if one
+  // is active, otherwise to all active boutiques — matches the customer's
+  // mental model: "boutiques selling tops" or "all boutiques".
+  const { data: boutiques = [] } = useQuery({
+    queryKey: ["filter-boutiques", selectedCategory],
+    queryFn: () => getPublicBoutiques(selectedCategory || undefined),
   });
 
   const [localMin, setLocalMin] = useState(minPrice);
@@ -64,6 +73,7 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
   const hasFilters =
     selectedCategory ||
     selectedBrand ||
+    selectedBoutique ||
     selectedGender ||
     selectedCondition ||
     selectedSize ||
@@ -192,6 +202,36 @@ export default function FilterPanel({ categories }: FilterPanelProps) {
           ))}
         </div>
       </div>
+
+      {/* Boutique */}
+      {boutiques.length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium text-gray-900 mb-3">Boutique</h3>
+          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+            {boutiques.map((b) => (
+              <label
+                key={b.id}
+                className="flex items-center cursor-pointer group"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedBoutique === b.slug}
+                  onChange={() =>
+                    updateFilter(
+                      "boutique",
+                      selectedBoutique === b.slug ? "" : b.slug
+                    )
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                />
+                <span className="ml-2 text-sm text-gray-700 group-hover:text-black truncate">
+                  {b.name}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Size */}
       <div>

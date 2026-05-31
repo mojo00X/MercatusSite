@@ -21,8 +21,10 @@ class OrderResponse(BaseModel):
     user_id: int
     status: str
     total_amount: float
+    platform_fee_amount: float = 0.0
     stripe_session_id: Optional[str] = None
     stripe_payment_intent: Optional[str] = None
+    stripe_charge_id: Optional[str] = None
     shipping_address: Optional[str] = None
     created_at: datetime
     items: List[OrderItemResponse] = []

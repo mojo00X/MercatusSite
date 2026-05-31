@@ -16,6 +16,7 @@ export default function ProductList() {
   const filters = {
     category: searchParams.get("category") || undefined,
     brand: searchParams.get("brand") || undefined,
+    boutique: searchParams.get("boutique") || undefined,
     gender: searchParams.get("gender") || undefined,
     condition,
     size: searchParams.get("size") || undefined,

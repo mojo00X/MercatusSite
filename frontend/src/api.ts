@@ -5,6 +5,7 @@ import type {
   Category,
   Brand,
   Boutique,
+  BoutiquePublic,
   Cart,
   Collection,
   Order,
@@ -405,5 +406,18 @@ export interface BoutiqueStats {
 
 export async function getBoutiqueStats(): Promise<BoutiqueStats> {
   const { data } = await client.get("/boutique/stats");
+  return data;
+}
+
+export async function getPublicBoutiques(
+  categorySlug?: string
+): Promise<BoutiquePublic[]> {
+  const params = categorySlug ? { category: categorySlug } : undefined;
+  const { data } = await client.get("/boutiques", { params });
+  return data;
+}
+
+export async function getPublicBoutique(slug: string): Promise<BoutiquePublic> {
+  const { data } = await client.get(`/boutiques/${slug}`);
   return data;
 }

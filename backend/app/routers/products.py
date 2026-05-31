@@ -6,6 +6,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.dependencies import get_db
+from app.models.boutique import Boutique
 from app.models.product import Brand, Category, Product, ProductVariant
 from app.schemas.product import (
     BrandResponse,
@@ -21,6 +22,7 @@ router = APIRouter()
 def list_products(
     category: Optional[str] = None,
     brand: Optional[str] = None,
+    boutique: Optional[str] = None,
     gender: Optional[str] = None,
     condition: Optional[str] = None,
     size: Optional[str] = None,
@@ -40,6 +42,7 @@ def list_products(
             joinedload(Product.images),
             joinedload(Product.category),
             joinedload(Product.brand),
+            joinedload(Product.boutique),
         )
         .filter(Product.is_active == True)
     )
@@ -48,6 +51,8 @@ def list_products(
         query = query.join(Category).filter(Category.slug == category)
     if brand:
         query = query.join(Brand).filter(Brand.slug == brand)
+    if boutique:
+        query = query.join(Boutique).filter(Boutique.slug == boutique)
     if gender:
         query = query.filter(Product.gender == gender)
     if condition:
@@ -131,6 +136,7 @@ def get_product(slug: str, db: Session = Depends(get_db)):
             joinedload(Product.images),
             joinedload(Product.category),
             joinedload(Product.brand),
+            joinedload(Product.boutique),
         )
         .filter(Product.slug == slug, Product.is_active == True)  # noqa: E712
         .first()

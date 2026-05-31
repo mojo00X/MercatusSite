@@ -8,6 +8,7 @@ from app.routers import (
     admin,
     auth,
     boutique,
+    boutiques_public,
     cart,
     checkout,
     collections,
@@ -36,6 +37,7 @@ app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
 app.include_router(collections.router, prefix="/api/collections", tags=["Collections"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(boutique.router, prefix="/api/boutique", tags=["Boutique"])
+app.include_router(boutiques_public.router, prefix="/api/boutiques", tags=["Boutiques (public)"])
 
 # Static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -89,6 +91,14 @@ def on_startup():
     _add_column_if_missing(
         "ALTER TABLE users ADD COLUMN role VARCHAR NOT NULL DEFAULT 'customer'",
         "users.role",
+    )
+    _add_column_if_missing(
+        "ALTER TABLE orders ADD COLUMN platform_fee_amount DOUBLE PRECISION NOT NULL DEFAULT 0",
+        "orders.platform_fee_amount",
+    )
+    _add_column_if_missing(
+        "ALTER TABLE orders ADD COLUMN stripe_charge_id VARCHAR",
+        "orders.stripe_charge_id",
     )
     # Backfill admins' role so the legacy is_admin flag and the new role enum
     # stay consistent. Idempotent — re-running just touches the same rows.

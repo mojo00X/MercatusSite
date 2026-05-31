@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_PUBLISHABLE_KEY: str = ""
+    # Percent of each boutique item's gross that the platform retains.
+    # 10.0 means the boutique gets 90% of the line subtotal; the rest stays
+    # on the platform balance.
+    PLATFORM_FEE_PERCENT: float = 10.0
     FRONTEND_URL: str = "http://localhost:5173,https://mercatussitee.onrender.com"
 
     model_config = SettingsConfigDict(env_file=".env")

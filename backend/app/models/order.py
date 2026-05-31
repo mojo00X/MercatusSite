@@ -13,8 +13,13 @@ class Order(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     status = Column(String, default="pending")
     total_amount = Column(Float, nullable=False)
+    # Sum of platform fees across all boutique items on this order.
+    # Useful for reporting; not used by Stripe directly (Stripe sees per-item
+    # transfer amounts at payout time).
+    platform_fee_amount = Column(Float, nullable=False, default=0.0)
     stripe_session_id = Column(String, nullable=True)
     stripe_payment_intent = Column(String, nullable=True)
+    stripe_charge_id = Column(String, nullable=True)
     shipping_address = Column(Text, nullable=True)  # JSON string
     created_at = Column(DateTime, default=datetime.utcnow)
 

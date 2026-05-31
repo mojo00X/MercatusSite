@@ -23,6 +23,15 @@ export interface Boutique {
   created_at: string;
 }
 
+export interface BoutiquePublic {
+  id: number;
+  name: string;
+  slug: string;
+  bio?: string | null;
+  logo_url?: string | null;
+  banner_url?: string | null;
+}
+
 export interface Category {
   id: number;
   name: string;
@@ -157,6 +166,7 @@ export interface PaginatedResponse<T> {
 export interface ProductFilters {
   category?: string;
   brand?: string;
+  boutique?: string;
   gender?: string;
   condition?: "new" | "preowned";
   size?: string;

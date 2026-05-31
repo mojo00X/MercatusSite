@@ -1,14 +1,15 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from collections import defaultdict
+from typing import Any, Dict, Optional
 
 import stripe
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models.cart import Cart, CartItem
+from app.models.boutique import Boutique
+from app.models.cart import Cart
 from app.models.order import Order, OrderItem
-from app.models.product import ProductVariant
 
 logger = logging.getLogger("uvicorn.error")
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -20,6 +21,7 @@ def create_checkout_session(
     success_url: Optional[str] = None,
     cancel_url: Optional[str] = None,
     shipping_address: Optional[Dict[str, Any]] = None,
+    customer_email: Optional[str] = None,
 ) -> stripe.checkout.Session:
     primary_frontend = ""
     for origin in settings.FRONTEND_URL.split(","):
@@ -70,6 +72,11 @@ def create_checkout_session(
         cancel_url=cancel_url,
     )
 
+    # Pass the customer's email through so Stripe sends its automatic receipt
+    # (you also need to enable receipts in Stripe Dashboard → Settings → Emails).
+    if customer_email:
+        session_kwargs["customer_email"] = customer_email
+
     # Persist the shipping address the user typed on our checkout page through
     # to the Order via webhook. Stripe metadata values are capped at 500 chars,
     # which is plenty for a serialized address.
@@ -112,14 +119,34 @@ def _process_completed_checkout(session: dict, db: Session) -> None:
     if not cart:
         return
 
-    # Calculate total
+    fee_pct = float(settings.PLATFORM_FEE_PERCENT) / 100.0
+
+    # Build order items and accumulate per-boutique totals so we can issue
+    # one Stripe Transfer per boutique after the charge clears.
     total = 0.0
+    platform_fee_total = 0.0
     order_items = []
+    # boutique_id -> {"gross": cents, "fee": cents}
+    boutique_totals: Dict[int, Dict[str, int]] = defaultdict(
+        lambda: {"gross": 0, "fee": 0}
+    )
+
     for item in cart.items:
         variant = item.variant
         product = variant.product
         price = variant.price_override if variant.price_override else product.base_price
-        total += price * item.quantity
+        line_total = price * item.quantity
+        total += line_total
+
+        # Platform-owned items (boutique_id is None) generate no transfer and
+        # no platform fee — the money belongs to the platform either way.
+        if product.boutique_id is not None:
+            fee = round(line_total * fee_pct, 2)
+            platform_fee_total += fee
+            line_total_cents = int(round(line_total * 100))
+            fee_cents = int(round(fee * 100))
+            boutique_totals[product.boutique_id]["gross"] += line_total_cents
+            boutique_totals[product.boutique_id]["fee"] += fee_cents
 
         order_items.append(
             OrderItem(
@@ -159,19 +186,101 @@ def _process_completed_checkout(session: dict, db: Session) -> None:
         if meta_shipping:
             shipping_json = meta_shipping
 
+    # Resolve the Stripe charge id from the PaymentIntent so transfers can
+    # tie back to it (better dispute/refund accounting).
+    charge_id: Optional[str] = None
+    payment_intent_id = session.get("payment_intent")
+    if payment_intent_id:
+        try:
+            pi = stripe.PaymentIntent.retrieve(payment_intent_id)
+            charges = pi.get("charges", {}).get("data") or []
+            if charges:
+                charge_id = charges[0].get("id")
+            else:
+                charge_id = pi.get("latest_charge")
+        except Exception as exc:
+            logger.warning("Failed to retrieve PaymentIntent %s: %s", payment_intent_id, exc)
+
     order = Order(
         user_id=int(user_id),
         status="paid",
         total_amount=total,
+        platform_fee_amount=round(platform_fee_total, 2),
         stripe_session_id=session.get("id"),
-        stripe_payment_intent=session.get("payment_intent"),
+        stripe_payment_intent=payment_intent_id,
+        stripe_charge_id=charge_id,
         shipping_address=shipping_json,
         items=order_items,
     )
     db.add(order)
+    db.flush()  # need order.id for the idempotency keys
 
     # Clear cart
     for item in cart.items:
         db.delete(item)
 
     db.commit()
+    db.refresh(order)
+
+    # Fan out per-boutique Stripe Transfers. Each uses an idempotency key tied
+    # to (order, boutique) so webhook retries are safe.
+    if boutique_totals:
+        _payout_to_boutiques(db, order.id, boutique_totals, charge_id)
+
+
+def _payout_to_boutiques(
+    db: Session,
+    order_id: int,
+    boutique_totals: Dict[int, Dict[str, int]],
+    charge_id: Optional[str],
+) -> None:
+    for boutique_id, amounts in boutique_totals.items():
+        boutique = (
+            db.query(Boutique).filter(Boutique.id == boutique_id).first()
+        )
+        if not boutique or not boutique.stripe_account_id:
+            logger.warning(
+                "Skipping payout for order %s boutique %s: no Stripe account",
+                order_id,
+                boutique_id,
+            )
+            continue
+
+        # Amount to transfer = gross to that boutique, minus platform fee.
+        transfer_amount = amounts["gross"] - amounts["fee"]
+        if transfer_amount <= 0:
+            continue
+
+        try:
+            transfer_kwargs: Dict[str, Any] = dict(
+                amount=transfer_amount,
+                currency="usd",
+                destination=boutique.stripe_account_id,
+                metadata={
+                    "order_id": str(order_id),
+                    "boutique_id": str(boutique_id),
+                },
+            )
+            # source_transaction ties the transfer to the originating charge
+            # so Stripe handles partial refunds / disputes correctly.
+            if charge_id:
+                transfer_kwargs["source_transaction"] = charge_id
+            stripe.Transfer.create(
+                **transfer_kwargs,
+                idempotency_key=f"order_{order_id}_boutique_{boutique_id}",
+            )
+            logger.info(
+                "Transferred %s cents to boutique %s for order %s",
+                transfer_amount,
+                boutique_id,
+                order_id,
+            )
+        except Exception as exc:
+            # Don't blow up the webhook on a transfer failure — funds are
+            # safely in the platform balance and an admin can reconcile later.
+            logger.error(
+                "Stripe transfer failed for order %s boutique %s: %s",
+                order_id,
+                boutique_id,
+                exc,
+            )

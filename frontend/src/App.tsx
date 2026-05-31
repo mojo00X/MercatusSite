@@ -30,6 +30,8 @@ import BoutiqueSettings from "./pages/BoutiqueSettings";
 import BoutiquePayouts from "./pages/BoutiquePayouts";
 import BoutiqueOnboardingReturn from "./pages/BoutiqueOnboardingReturn";
 import BoutiqueOnboardingRefresh from "./pages/BoutiqueOnboardingRefresh";
+import Boutiques from "./pages/Boutiques";
+import BoutiqueStorefront from "./pages/BoutiqueStorefront";
 import BoutiqueSidebar from "./components/layout/BoutiqueSidebar";
 
 import Dashboard from "./pages/admin/Dashboard";
@@ -109,6 +111,8 @@ export default function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<ProductList />} />
                 <Route path="/products/:slug" element={<ProductDetail />} />
+                <Route path="/boutiques" element={<Boutiques />} />
+                <Route path="/boutiques/:slug" element={<BoutiqueStorefront />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />

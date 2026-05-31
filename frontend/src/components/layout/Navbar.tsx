@@ -54,6 +54,12 @@ export default function Navbar() {
             >
               Pre-Owned
             </Link>
+            <Link
+              to="/boutiques"
+              className="text-sm font-medium text-gray-700 hover:text-black transition-colors"
+            >
+              Boutiques
+            </Link>
           </div>
 
           {/* Search - desktop */}
@@ -221,6 +227,13 @@ export default function Navbar() {
               className="block py-2 text-sm font-medium text-gray-700 hover:text-black"
             >
               Pre-Owned
+            </Link>
+            <Link
+              to="/boutiques"
+              onClick={() => setMobileOpen(false)}
+              className="block py-2 text-sm font-medium text-gray-700 hover:text-black"
+            >
+              Boutiques
             </Link>
           </div>
         </div>
